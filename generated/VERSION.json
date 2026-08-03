@@ -1,0 +1,13 @@
+{
+  "app": "Brainana Align",
+  "version": "0.17.26-workflow-ui.1",
+  "buildId": "grouped-workflow-ui-1",
+  "bundleVersion": "17261",
+  "bundleIdentifier": "org.brainana.align",
+  "minimumMacOS": "11.0",
+  "behaviorReference": "0.15.4",
+  "readableSourceBase": "0.11.1",
+  "frontendStatus": "Production frontend built entirely from readable TypeScript source; no recovered application bundle is loaded",
+  "architecture": "Shared readable TypeScript/NiiVue scientific frontend with physical-coordinate rigid, similarity, anisotropic-scale, affine, landmark-polyharmonic, and automatic image-driven inverse control-grid transforms. Linear landmark fits include diagnostics and explicit opt-in reflection safeguards.",
+  "releaseName": "Brainana Align v0.17.26-workflow-ui.1"
+}

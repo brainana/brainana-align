@@ -1,0 +1,21 @@
+{
+  "generatedAt": "2026-08-02T02:53:01.139Z",
+  "required": [],
+  "results": [
+    {
+      "engine": "chromium",
+      "status": "not-installed",
+      "executablePath": "/usr/bin/chromium"
+    },
+    {
+      "engine": "firefox",
+      "status": "not-installed",
+      "executablePath": "/Users/marcaro/Library/Caches/ms-playwright/firefox-1532/firefox/Nightly.app/Contents/MacOS/firefox"
+    },
+    {
+      "engine": "webkit",
+      "status": "not-installed",
+      "executablePath": "/Users/marcaro/Library/Caches/ms-playwright/webkit-2311/pw_run.sh"
+    }
+  ]
+}
