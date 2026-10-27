@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict'
+import { inspectMachO } from '../scripts/macho.mjs'
+const b=Buffer.alloc(256)
+b.writeUInt32LE(0xfeedfacf,0);b.writeUInt32LE(0x1000007,4)
+b.writeUInt32LE(3,16);b.writeUInt32LE(112,20)
+b.writeUInt32LE(0x32,32);b.writeUInt32LE(24,36);b.writeUInt32LE(1,40);b.writeUInt32LE(0x0d0500,44)
+b.writeUInt32LE(0x19,56);b.writeUInt32LE(72,60);b.writeBigUInt64LE(144n,96);b.writeBigUInt64LE(80n,104)
+b.writeUInt32LE(0x1d,128);b.writeUInt32LE(16,132);b.writeUInt32LE(224,136);b.writeUInt32LE(32,140)
+assert.equal(inspectMachO(b,0x1000007).minimumMacOS,0x0d0500)
+assert.throws(()=>inspectMachO(b.subarray(0,180)),/past end/)
+const signature=Buffer.from(b);signature.writeUInt32LE(240,136)
+assert.throws(()=>inspectMachO(signature),/past end/)
+assert.throws(()=>inspectMachO(b,0x100000c),/architecture/)
+const badSize=Buffer.from(b);badSize.writeUInt32LE(500,36)
+assert.throws(()=>inspectMachO(badSize),/invalid size/)
+console.log('Mach-O runtime structural tests passed: architectures, deployment target, truncated segment/signature rejection')

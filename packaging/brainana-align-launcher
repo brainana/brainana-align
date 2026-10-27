@@ -33,15 +33,14 @@ HARDWARE_ARM64="$(/usr/sbin/sysctl -n hw.optional.arm64 2>/dev/null || printf '0
 ROSETTA_TRANSLATED="$(/usr/sbin/sysctl -in sysctl.proc_translated 2>/dev/null || printf '0')"
 if [[ "$HARDWARE_ARM64" == "1" ]]; then
   HARDWARE_ARCH="arm64"
-  NODE="$RES/runtime/darwin-arm64/node"
 elif [[ "$PROCESS_ARCH" == "x86_64" ]]; then
   HARDWARE_ARCH="x86_64"
-  NODE="$RES/runtime/darwin-x64/node"
 else
   show_error "Unsupported Mac architecture. Process architecture: $PROCESS_ARCH; arm64 hardware flag: $HARDWARE_ARM64"
   exit 31
 fi
-[[ -x "$NODE" ]] || { show_error "Bundled runtime missing for $HARDWARE_ARCH. Reinstall the complete application."; exit 33; }
+. "$RES/runtime/runtime-command.sh"
+brainana_select_runtime || { show_error "Bundled runtime missing for $HARDWARE_ARCH. Reinstall the complete application."; exit 33; }
 
 SUPPORT="$HOME/Library/Application Support/Brainana Align"
 CACHE="$HOME/Library/Caches/Brainana Align/$VERSION"
@@ -53,7 +52,7 @@ chmod 600 "$PROFILES"
 LOG_FILE="$LOGS/launch-$(/bin/date +%Y%m%d-%H%M%S)-$$.log"
 exec > >(tee -a "$LOG_FILE") 2>&1
 
-INSTANCE_DIR="$SUPPORT/instance"
+INSTANCE_DIR="${BRAINANA_DESKTOP_INSTANCE_DIR:-$SUPPORT/instance}"
 ACTIVE_INSTANCE="$INSTANCE_DIR/active.json"
 /bin/mkdir -p "$INSTANCE_DIR"
 /bin/chmod 700 "$INSTANCE_DIR" 2>/dev/null || true
@@ -214,6 +213,7 @@ open_interactive_ssh() {
   # Require positive acknowledgement that Terminal actually executed the helper.
   # A successful `open` only means LaunchServices accepted the request; it does
   # not prove that Terminal ran the script.
+  trap 'if [[ -s "$pid_file" ]]; then kill "$(/bin/cat "$pid_file")" >/dev/null 2>&1 || true; fi; /usr/bin/ssh -S "$socket" -O exit "$target" >/dev/null 2>&1 || true; exit 130' HUP INT TERM
   local startup_i=0
   while [[ $startup_i -lt 80 && ! -s "$started_file" && ! -s "$status_file" ]]; do
     /bin/sleep 0.1
@@ -229,6 +229,7 @@ open_interactive_ssh() {
   local i=0 helper_pid="" helper_seen=0
   while [[ $i -lt 1200 ]]; do
     if /usr/bin/ssh -S "$socket" -O check "$target" >/dev/null 2>&1; then
+      trap - HUP INT TERM
       /bin/rm -rf "$auth_dir"
       return 0
     fi
@@ -276,7 +277,11 @@ open_interactive_ssh() {
   return 1
 }
 
-MODE_PICK="$(choose_mode)" || exit 0
+if [[ "${BRAINANA_DESKTOP_REMOTE:-0}" == "1" ]]; then
+  MODE_PICK="Remote workstation"
+else
+  MODE_PICK="$(choose_mode)" || exit 0
+fi
 MODE="local"
 LABEL="This Mac"
 PROFILE_NAME="This Mac"
@@ -396,12 +401,7 @@ ARGS=(--host 127.0.0.1 --port 0 --handshake-file "$HANDSHAKE_FILE" --error-file 
 # SSH/SFTP children are active, which makes a later Dock launch only bounce.
 LAUNCH_LABEL="org.brainana.align.server.${UID}.$$.${RANDOM:-0}"
 SERVER_WRAPPER="$LAUNCH_DIR/start-server.sh"
-{
-  printf '#!/bin/bash\nexec '
-  printf '%q ' "$NODE" "$RES/runtime/server.mjs" "${ARGS[@]}"
-  printf '>> %q 2>&1 < /dev/null\n' "$SERVER_LOG"
-} > "$SERVER_WRAPPER"
-/bin/chmod 700 "$SERVER_WRAPPER"
+brainana_write_server_wrapper "$SERVER_WRAPPER" "$SERVER_LOG" "$RES/runtime/server.mjs" "${ARGS[@]}"
 /bin/launchctl submit -l "$LAUNCH_LABEL" -- /bin/bash "$SERVER_WRAPPER"
 PID=""
 SERVER_OWNERSHIP_TRANSFERRED=0
@@ -484,7 +484,14 @@ printf '{"schemaVersion":3,"version":"%s","buildId":"%s","pid":%s,"port":%s,"ses
 /bin/mv -f "$INSTANCE_TMP" "$ACTIVE_INSTANCE"
 SERVER_OWNERSHIP_TRANSFERRED=1
 
-echo "Local server ready. Opening the macOS default browser: $URL"
+if [[ -n "${BRAINANA_DESKTOP_HANDOFF:-}" ]]; then
+  /bin/cp "$ACTIVE_INSTANCE" "$BRAINANA_DESKTOP_HANDOFF.tmp.$$"
+  /bin/chmod 600 "$BRAINANA_DESKTOP_HANDOFF.tmp.$$"
+  /bin/mv -f "$BRAINANA_DESKTOP_HANDOFF.tmp.$$" "$BRAINANA_DESKTOP_HANDOFF"
+  echo "Local server ready. Connection transferred to the desktop window."
+  exit 0
+fi
+echo "Local server ready. Opening the macOS default browser (session token omitted)."
 /usr/bin/open "$URL" >/dev/null 2>&1 &
 echo "Browser launch requested. The launcher will now exit while the server remains available for relaunch."
 exit 0

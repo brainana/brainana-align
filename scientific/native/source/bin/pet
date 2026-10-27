@@ -1,0 +1,19 @@
+#!/bin/sh
+# Use only a rebuilt 64-bit tool; never fall back to archived platform binaries.
+jip_source_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd) || exit 1
+if [ -z "${JIP_HOME:-}" ]; then JIP_HOME="$jip_source_root"; export JIP_HOME; fi
+jip_tool=jip-srtm
+if [ -n "${JIP_BUILD_DIR:-}" ]; then
+  jip_target="$JIP_BUILD_DIR/$jip_tool"
+  if [ -x "$jip_target" ]; then exec "$jip_target" "$@"; fi
+  if [ -x "${jip_target}.exe" ]; then exec "${jip_target}.exe" "$@"; fi
+else
+  for jip_build in "$jip_source_root/../build/cmake" "$jip_source_root/../build/arm64" "$jip_source_root/../build" "$jip_source_root/build"; do
+    jip_target="$jip_build/$jip_tool"
+    if [ -x "$jip_target" ]; then exec "$jip_target" "$@"; fi
+  if [ -x "${jip_target}.exe" ]; then exec "${jip_target}.exe" "$@"; fi
+  done
+fi
+printf '%s\n' "No rebuilt 64-bit $jip_tool found. Set JIP_BUILD_DIR to your CMake build directory." >&2
+printf '%s\n' "Build with: cmake -S source -B build && cmake --build build" >&2
+exit 1

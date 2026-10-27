@@ -2,7 +2,7 @@
 import json, pathlib, subprocess, tempfile, time, urllib.request
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-SERVER = ROOT / 'source' / 'server.mjs'
+SERVER = ROOT / 'apps/align' / 'server.mjs'
 
 
 def launch():

@@ -1,3 +1,4 @@
+import {fileURLToPath} from 'node:url'
 import { randomBytes } from 'node:crypto'
 import { spawn } from 'node:child_process'
 import fs from 'node:fs'
@@ -9,8 +10,8 @@ const handshake = fs.mkdtempSync(path.join(os.tmpdir(), 'ba-port-'))
 const portFile = path.join(handshake, 'port')
 const token = randomBytes(32).toString('hex')
 fs.writeFileSync(path.join(root, 'x.nii'), Buffer.from([1, 2, 3]))
-const testDir = path.dirname(new URL(import.meta.url).pathname)
-const serverPath = path.resolve(testDir, '../source/server.mjs')
+const testDir = path.dirname(fileURLToPath(import.meta.url))
+const serverPath = path.resolve(testDir, '../apps/align/server.mjs')
 const child = spawn(process.execPath, [serverPath, '--port', '0', '--port-file', portFile, '--root', root, '--session-token', token], { stdio: ['ignore', 'pipe', 'pipe'] })
 let stderr = ''
 child.stderr.on('data', data => { stderr += data })

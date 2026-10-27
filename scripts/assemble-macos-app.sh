@@ -16,18 +16,15 @@ while [[ $# -gt 0 ]]; do
 done
 [[ -f "$ARM64_NODE" && -f "$X64_NODE" && -n "$OUT" ]] || usage
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-SOURCE="$ROOT/source"
+SOURCE="$ROOT/apps/align"
 APP="$OUT/Brainana Align.app"
 
+node "$ROOT/scripts/verify-macos-runtimes.mjs" "$ARM64_NODE" "$X64_NODE"
 node "$ROOT/scripts/generate-version.mjs"
-(cd "$SOURCE" && COREPACK_HOME="$ROOT/.cache/corepack" corepack pnpm install --frozen-lockfile --ignore-scripts && COREPACK_HOME="$ROOT/.cache/corepack" corepack pnpm run build)
+(cd "$ROOT" && npm ci && npm run build)
+node "$ROOT/scripts/prepare-desktop.mjs" "$ARM64_NODE" "$X64_NODE"
 rm -rf "$APP"
-mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources/runtime/darwin-arm64" "$APP/Contents/Resources/runtime/darwin-x64"
+mkdir -p "$APP"
+cp -a "$ROOT/generated/browser-support/Contents" "$APP/Contents"
 cp "$ROOT/generated/Info.plist" "$APP/Contents/Info.plist"
-cp "$ROOT/packaging/brainana-align-launcher" "$APP/Contents/MacOS/brainana-align-launcher"
-cp "$SOURCE/server.mjs" "$SOURCE/sftpClient.mjs" "$SOURCE/platformCore.mjs" "$SOURCE/version.mjs" "$SOURCE/version.env" "$APP/Contents/Resources/runtime/"
-cp -a "$SOURCE/dist" "$APP/Contents/Resources/runtime/dist"
-cp "$ARM64_NODE" "$APP/Contents/Resources/runtime/darwin-arm64/node"
-cp "$X64_NODE" "$APP/Contents/Resources/runtime/darwin-x64/node"
-chmod 755 "$APP/Contents/MacOS/brainana-align-launcher" "$APP/Contents/Resources/runtime/darwin-arm64/node" "$APP/Contents/Resources/runtime/darwin-x64/node"
 echo "$APP"

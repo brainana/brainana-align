@@ -1,0 +1,46 @@
+!0 0
+	    {{ input options from shell window }}
+display {file1] [file2] ... [options]	       display -h for short help
+					       display -H for long  help menu
+	   1) display format
+	   2) overlays & wire frames
+	   3) colormaps	
+	   4) GLM
+!1 0
+image display format:
+_____________________
+-y		flip the y orientation of images up/down (X11 standard versus openGL standard)
+example:	alias display ~/bin/jip-display -y;  display -y file.nii
+
+-z [integer]	set the beginning zoom factor
+-x [integer]	set the beginning number of panels in x
+-m [integer]	start in mosaic format with this many panels
+-3		start in tri-plane display mode
+example:	display file.bshort -x 8 -z 2 -m 16
+example:	display file.bshort -3
+
+!2 0
+overlays & wire frames
+______________________
+-o          read a file containing a list of overlays
+-w          read a file containing a list of wireframes
+example:    display -G glm.dat -o overlay-list.dat -w wire-list.dat
+
+!3 0
+colormaps
+_________
+
+-a          load color map file using linear scale
+-P or -p    load color map file using log scale
+            assumes -log_10(p) in file
+-A          color map using log scale,
+            assumes -ln(p) in file
+example:    display anatomy.bshort -P P-1.bfloat -a fCBV.bshort
+
+!4 0
+GLM (General Linear Model)
+__________________________
+-G or -g    read GLM control file
+-T or -S    display T or S files with -G option
+-e          input file excluded from GLM
+example:    display -G glm.dat -T -e anatomy.bshort

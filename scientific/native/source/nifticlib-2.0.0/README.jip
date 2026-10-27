@@ -1,0 +1,22 @@
+This README file has been added to the standard NIFTI directory package by Joe Mandeville.
+To make NIFTI libraries for use with "jip" tools, follow these instructions.
+
+To create libraries for a given machine type, do the following from this directory:
+make clean
+make all
+cd lib
+
+To verify that the libraries are new, "ls -l *.a"
+
+MAKE A DIRECTORY FOR THIS OS/MACHINE IF ONE DOES NOT EXIST: "OS-machine"
+EXAMPLE:
+
+unix% uname -s
+Linux
+unix% uname -m
+i686
+unix% mkdir Linux-i686
+
+THEN copy the libraries into the directory.
+
+unix% mv *.a Linux-i686

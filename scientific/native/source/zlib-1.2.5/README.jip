@@ -1,0 +1,22 @@
+This README file has been added to the standard zlib directory package by Joe Mandeville.
+To make zlib libraries for use with "jip" tools, follow these instructions.
+
+From this directory:
+
+make distclean
+./configure
+make
+
+To verify that the library is new, "ls -l libz.a"
+
+MAKE A DIRECTORY FOR THIS OS/MACHINE IF ONE DOES NOT EXIST: "OS-machine"
+
+unix% uname -s
+Linux
+unix% uname -i
+i686
+unix% mkdir Linux-i686
+
+THEN
+
+unix% mv libz.a Linux-i686

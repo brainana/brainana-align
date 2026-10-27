@@ -1,0 +1,94 @@
+This distribution of the "jip toolset" consists of 5 coordinated programs:
+1) jip          command-oriented "scripting" tool
+2) jip-display  4-D display package
+3) jip-align    registration using affine + non-linear warps
+4) jip-glm      fMRI analyis using the General Linear Model (1st level)
+5) jip-rem      fMRI analyis using a random-effects model (2nd level GLM)
+
+----------------------------------------------------------------------------
+Execution:  *** ALTER define-jip.tcsh ***
+----------------------------------------------------------------------------
+Edit "define_jip.tcsh" on this directory to define the disk location and aliases
+for the 5 programs above.
+
+You may want to put this into your shell startup file (e.g., .cshrc for csh).
+     source wherever/define_jip.tcsh 1
+where "wherever/" is the root location of jip tools.  The argument ("1", or anything else)
+suppresses text output.
+
+Note that each alias in "define_jip.tcsh" points to an ASCII file, which picks
+the correct executable (if it exists) for the current machine type (e.g., Linux-i686)
+using `uname -s`-`uname -m`. The exception is for the Mac OS X (Darwin) executable,
+which is a universal binary containing ppc, 32-bit (i386), and 64-bit (x86_64) executables.
+
+These executables have been provided directly without need for compilation.
+Note that the Darwin (Mac OS X) executable reports "i686" to "uname -m", but
+the architecture of this executable is 64-bit (x86_64), as reported by the "file" command.
+
+uname -s	uname -m	architecture
+--------	--------	------------
+Linux		i686		32 bit
+Linux		x86_64		64 bit
+CYGWIN_NT-5.1	i686		32 bit (Cygwin/X for Windows)
+Darwin				ppc, 32-bit 64 bit
+
+----------------------------------------------------------------------------
+Documentation:
+----------------------------------------------------------------------------
+This (such as it is) resides on directory $JIP_HOME/documentation.
+Documentation is designed to be used from the programs.  E.g.,
+"xd -h" reads the file "display-startup.txt" on $JIP_HOME/documentation.
+"xd -H" reads the file "display-menu.txt"    on $JIP_HOME/documentation.
+Documentation modes:
+1) startup: "xd -h", "align -h", "glm -h"
+2) menu   : "xd -H", "align -H", "glm -H", "jip" followed by "help"
+3) "h" button in the display and alignment GUIs
+4) "?" button in the display and alignment GUIs
+
+Check the documentation first before asking questions. I'll try to add to
+the documentation as I respond to questions.
+
+----------------------------------------------------------------------------
+Compilation (when a new executable is needed):
+----------------------------------------------------------------------------
+To facilitate compilation, I have created a directory named "build-jip".
+On this directory, try using "build-all.tcsh". As the extension indicates,
+scripts in this directory using the tcsh shell. If you are using another shell
+like bash, you will need to switch to tcsh to execute these scripts:
+unix% tcsh
+unix% source build-all.tcsh
+
+Other scripts on this directory can be used to compile separate parts.
+
+Alternatively,go to each of the 5 directories corresponding to the tools above:
+1) $JIP_HOME/jip
+2) $JIP_HOME/jip-display
+3) $JIP_HOME/jip-align
+4) $JIP_HOME/jip-glm
+5) $JIP_HOME/jip-rem
+
+On each directory, follow instructions in the file REAME.jip
+
+REQUIRED LIBRARIES
+The libraries below are required PRIOR to compiling each executable above.
+Create the libraries in the order below.
+
+1) Data compression library zlib (needed for znz libary, which is used by NIFTILIB)
+   Go to $JIP_HOME/zlib-1.2.5 and read the file README.jip
+2) NIFTI i/o library and znz library
+   Go to $JIP_HOME/nifticlib-2.2.0 and read the file README.jip
+3) FFTW (Fastest Fourier Transform in the West)
+   go to $JIP_HOME/fftw-3.2.2 and read the file README.jip
+   This library takes a long time to create.
+4) jip-specific libraries:
+   Go to $JIP_HOME/lib and read the file README.jip
+5) X11 library. This should reside somewhere on your system.
+   Common places include /usr/lib, /usr/local/lib, /usr/X11R6/lib
+6) Standard system libraries from /usr/lib
+
+
+----------------------------------------------------------------------------
+Citation:
+----------------------------------------------------------------------------
+The most appropriate citation depends upon your usage.
+Refer to jip-overview.pdf from www.nitrc.org/projects/jip

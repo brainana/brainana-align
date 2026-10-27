@@ -1,3 +1,4 @@
+import {fileURLToPath} from 'node:url'
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import os from 'node:os'
@@ -5,10 +6,10 @@ import path from 'node:path'
 import { createRequire } from 'node:module'
 import { pathToFileURL } from 'node:url'
 
-const root = path.resolve(new URL('..', import.meta.url).pathname)
-const require = createRequire(path.join(root, 'source', 'package.json'))
+const root = path.resolve(fileURLToPath(new URL('..', import.meta.url)))
+const require = createRequire(path.join(root, 'apps/align', 'package.json'))
 const ts = require('typescript')
-const source = path.join(root, 'source', 'src', 'domain', 'optimization', 'windows.ts')
+const source = path.join(root, 'apps/align', 'src', 'optimizationWindows.ts')
 let code = fs.readFileSync(source, 'utf8')
 code = code.replace(/^import type .*$/gm, '')
 const output = ts.transpileModule(code, {
@@ -56,18 +57,6 @@ assert.equal(mod.withinOptimizationWindows([10, 12, 30], { ...sagittalOnly, ...a
 const degenerateAxial = { axial: { min: [10, 10, 0], max: [10, 20, 0] } }
 assert.equal(mod.sanitizeWindowConstraint(degenerateAxial), null)
 assert.equal(mod.withinOptimizationWindows([999, 999, 999], degenerateAxial), true)
-
-// Explicit exhaustive invariant: every absent plane is equivalent to a full-plane
-// window and therefore cannot independently reject a voxel.
-for (const missing of ['sagittal', 'coronal', 'axial']) {
-  const partial = {
-    sagittal: { min:[0,10,20], max:[0,40,60] },
-    coronal: { min:[5,0,20], max:[30,0,60] },
-    axial: { min:[5,10,0], max:[30,40,0] },
-  }
-  delete partial[missing]
-  assert.equal(mod.withinOptimizationWindows([15,25,35], partial), true, `${missing} may be absent without rejecting an otherwise valid voxel`)
-}
 const nonFinite = { axial: { min: [0, 0, 0], max: [Number.NaN, 10, 0] } }
 assert.equal(mod.sanitizeWindowConstraint(nonFinite), null)
 

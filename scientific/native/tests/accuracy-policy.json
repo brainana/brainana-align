@@ -1,0 +1,42 @@
+{
+  "scope": "Asymmetric analytic brain-shaped phantoms, 24x28x20 plus 64x72x56 fixed / 72x64x48 moving; known centered-mm pull truth; no patient data",
+  "spacing_mm": [
+    1.0,
+    1.1,
+    1.4
+  ],
+  "cases": [
+    {
+      "id": 0,
+      "name": "rigid_translation",
+      "maximum_tre_mm": 1.0,
+      "maximum_mse_ratio": 0.6
+    },
+    {
+      "id": 1,
+      "name": "anisotropic_scale_translation",
+      "maximum_tre_mm": 1.0,
+      "maximum_mse_ratio": 0.6
+    },
+    {
+      "id": 2,
+      "name": "affine_shear_translation",
+      "maximum_tre_mm": 1.0,
+      "maximum_mse_ratio": 0.6
+    },
+    {
+      "id": 3,
+      "name": "smooth_nonlinear_x_distortion",
+      "maximum_tre_mm": 0.5,
+      "maximum_mse_ratio": 0.85
+    },
+    {
+      "id": 4,
+      "name": "larger_rotation_unequal_grids",
+      "maximum_tre_mm": 1.0,
+      "maximum_mse_ratio": 0.6
+    }
+  ],
+  "topology": "positive determinant on every fixed-grid voxel, including background and one-sided boundary derivatives",
+  "memory": "reported process peak RSS separately from newly owned trial payload; no universal budget claim"
+}

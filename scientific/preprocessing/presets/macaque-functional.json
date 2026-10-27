@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "preset": "macaque-functional",
+  "estimation_spacing_mm": 2.0,
+  "initial_spline_spacing_mm": 80.0,
+  "iterations": [
+    50,
+    30,
+    20
+  ],
+  "convergence": 0.0001,
+  "histogram_bins": 200,
+  "bias_field_fwhm": 0.15,
+  "wiener_noise": 0.01,
+  "threads": 4
+}

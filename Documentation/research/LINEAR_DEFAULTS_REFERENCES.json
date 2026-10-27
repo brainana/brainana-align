@@ -1,0 +1,36 @@
+{
+  "checked": "2026-10-25",
+  "mapping_revision": 1,
+  "catalog": "apps/align/src/linearDefaults.ts",
+  "references": [
+    {
+      "profile": "afni",
+      "url": "https://afni.nimh.nih.gov/pub/dist/doc/program_help/3dAllineate.html"
+    },
+    {
+      "profile": "afni-hellinger-definition",
+      "url": "https://afni.nimh.nih.gov/pub/dist/edu/2014_0929_lister_hill/afni_handouts/afni10_volreg_talairach.pdf"
+    },
+    {
+      "profile": "fsl",
+      "url": "https://fsl.fmrib.ox.ac.uk/fsl/docs/registration/flirt/user_guide.html"
+    },
+    {
+      "profile": "fsl-implementation",
+      "url": "https://www.fmrib.ox.ac.uk/datasets/techrep/tr02mj1/tr02mj1/node21.html"
+    },
+    {
+      "profile": "ants",
+      "url": "https://github.com/ANTsX/ANTs/blob/v2.6.3/Scripts/antsRegistrationSyN.sh"
+    },
+    {
+      "profile": "jip",
+      "source": "scientific/native/source/engine/engine.c; shared/cost_function.inc; brainana_registration/registration_settings.py"
+    },
+    {
+      "profile": "elastix",
+      "url": "https://github.com/SuperElastix/elastix/blob/main/Core/Main/elxParameterObject.cxx"
+    }
+  ],
+  "scope": "Settings mappings to Align; no external engine or identical-result claim"
+}

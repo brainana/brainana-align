@@ -1,0 +1,22 @@
+FFTW is supplied without modification for non-commercial use.
+See www.fftw.org for terms of use and documentation.
+
+This README file has been added to the standard FFTW directory package by Joe Mandeville.
+To make the FFTW library for use with "jip" tools, follow these instructions.
+
+Determine the OS and the machine type from unix/Linux:
+unix% uname -s
+Linux
+unix% uname -m
+i686
+
+MAKE A DIRECTORY FOR THIS OS/MACHINE IF ONE DOES NOT EXIST: "OS-machine"
+unix% mkdir Linux-i686
+
+THEN
+
+From the directory of this README.jbm file:
+
+make distclean
+./configure --prefix=$JIP_HOME/fftw-3.2.2/Linux-i686  (where JIP_HOME is the root directory for jip tools)
+make install

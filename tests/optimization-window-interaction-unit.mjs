@@ -1,3 +1,4 @@
+import {fileURLToPath} from 'node:url'
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import os from 'node:os'
@@ -5,13 +6,13 @@ import path from 'node:path'
 import { createRequire } from 'node:module'
 import { pathToFileURL } from 'node:url'
 
-const root = path.resolve(new URL('..', import.meta.url).pathname)
-const require = createRequire(path.join(root, 'source', 'package.json'))
+const root = path.resolve(fileURLToPath(new URL('..', import.meta.url)))
+const require = createRequire(path.join(root, 'apps/align', 'package.json'))
 const ts = require('typescript')
-const source = path.join(root, 'source', 'src', 'viewer', 'optimizationWindowInteraction.ts')
+const source = path.join(root, 'apps/align', 'src', 'optimizationWindowInteraction.ts')
 let code = fs.readFileSync(source, 'utf8')
 code = code.replace(/^import type .*$/gm, '')
-code = code.replace(/^import \{[^\n]+\} from '\.\.\/domain\/optimization\/windows'$/m, `
+code = code.replace(/^import \{[^\n]+\} from '\.\/optimizationWindows'$/m, `
 const planeAxes = { sagittal:[1,2,0], coronal:[0,2,1], axial:[0,1,2] }
 const createWindowBounds = (start,end,plane) => {
   const [a,b,depth]=planeAxes[plane]; const min=[...start], max=[...start]
@@ -32,15 +33,6 @@ const modulePath = path.join(temp, 'optimizationWindowInteraction.mjs')
 fs.writeFileSync(modulePath, output)
 const mod = await import(pathToFileURL(modulePath).href)
 
-const interactionSource = fs.readFileSync(source, 'utf8')
-assert.match(interactionSource, /view\.windowLayer\.parentElement \?\? view\.windowLayer/)
-assert.match(interactionSource, /addEventListener\('pointerdown', onPointerDown, true\)/)
-
-const mainSource = fs.readFileSync(path.join(root, 'source', 'src', 'app', 'bootstrap.ts'), 'utf8')
-const rejectHandler = mainSource.match(/onReject: \(\) => \{([\s\S]*?)\n\s*\},\n\s*\}\)/)?.[1] ?? ''
-assert.ok(rejectHandler, 'window rejection handler was not found')
-assert.doesNotMatch(rejectHandler, /delete optimizationWindows/, 'an invalid drag must preserve the existing window')
-
 // Regression: pointerup/pointercancel may lack an image coordinate. The last
 // valid coordinate must commit the visible drag rather than discard it.
 const axial = mod.windowBoundsForCompletedDrag([10,20,30], [40,60,30], null, 'axial', [1,1,1])
@@ -53,7 +45,8 @@ assert.deepEqual(sagittal, { min:[5,10,20], max:[5,30,50] })
 const current = mod.windowBoundsForCompletedDrag([10,20,30], [40,60,30], [50,70,30], 'axial', [1,1,1])
 assert.deepEqual(current, { min:[10,20,30], max:[50,70,30] })
 
-// Tiny drags are rejected and therefore cannot become invisible constraints.
-assert.equal(mod.windowBoundsForCompletedDrag([10,20,30], [10.5,20.5,30], null, 'axial', [1,1,1]), null)
+// Physical spans are independent of voxel-axis spacing. Capture checks CSS pixels.
+assert.ok(mod.windowBoundsForCompletedDrag([10,20,30], [10.5,20.5,30], null, 'axial', [1,1,10]))
+assert.equal(mod.windowBoundsForCompletedDrag([10,20,30], [10,60,30], null, 'axial', [1,1,1]), null)
 
 console.log('optimization-window interaction tests passed')

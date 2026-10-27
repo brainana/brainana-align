@@ -1,0 +1,17 @@
+____________________GETTING MORE HELP____________________________
+
+For unix command line options, start the program using
+                       "display -h"
+
+For longer menu-driven help, start the program using
+                       "display -H"
+
+To get a quick overview of functionality, select the interactive
+help key "h" with a RIGHT mouse button click.
+
+To get more specific interactive help, click on the "?" key and
+then click on area of the window (e.g., image, colorbar, text).
+This will provide context-specific help.
+
+To view the license file, see {$JIP_HOME}/LICENSE, where
+JIP_HOME is an unix environment variable.

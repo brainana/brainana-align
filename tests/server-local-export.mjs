@@ -1,3 +1,4 @@
+import {fileURLToPath} from 'node:url'
 import assert from 'node:assert/strict'
 import { randomBytes } from 'node:crypto'
 import { spawn } from 'node:child_process'
@@ -10,7 +11,7 @@ const exportRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'ba-export-output-'))
 const handshake = fs.mkdtempSync(path.join(os.tmpdir(), 'ba-export-port-'))
 const portFile = path.join(handshake, 'port')
 const token = randomBytes(32).toString('hex')
-const serverPath = path.resolve(path.dirname(new URL(import.meta.url).pathname), '../source/server.mjs')
+const serverPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../apps/align/server.mjs')
 const child = spawn(process.execPath, [
   serverPath,
   '--port', '0',

@@ -1,3 +1,4 @@
+import {fileURLToPath} from 'node:url'
 import assert from 'node:assert/strict'
 import { randomBytes } from 'node:crypto'
 import { spawn } from 'node:child_process'
@@ -9,7 +10,7 @@ const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ba-security-root-'))
 const handshake = fs.mkdtempSync(path.join(os.tmpdir(), 'ba-security-port-'))
 const portFile = path.join(handshake, 'port')
 const token = randomBytes(32).toString('hex')
-const serverPath = path.resolve(path.dirname(new URL(import.meta.url).pathname), '../source/server.mjs')
+const serverPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../apps/align/server.mjs')
 const child = spawn(process.execPath, [serverPath, '--port', '0', '--port-file', portFile, '--root', root, '--session-token', token, '--max-json-bytes', '64', '--max-upload-bytes', '128'], { stdio: ['ignore', 'pipe', 'pipe'] })
 let stderr = ''
 child.stderr.on('data', data => { stderr += data })
@@ -36,7 +37,17 @@ try {
   assert.equal(index.status, 200)
   assert.match(index.headers.get('content-security-policy') || '', /default-src 'self'/)
   assert.equal(index.headers.get('referrer-policy'), 'no-referrer')
-  console.log('server security checks passed')
+  const outside = fs.mkdtempSync(path.join(os.tmpdir(), 'ba-security-outside-'))
+  try {
+    fs.writeFileSync(path.join(outside, 'private.nii'), 'private bytes')
+    fs.symlinkSync(outside, path.join(root, 'escape'))
+    const escapedRead = await fetch(`${base}/api/file?path=escape/private.nii`, { headers: authorized })
+    assert.notEqual(escapedRead.status, 200, 'symlink reads must stay within the data root')
+    const escapedWrite = await fetch(`${base}/api/save-file?path=escape/new.nii`, {method:'POST',headers:{...authorized,'content-type':'application/octet-stream'},body:new Uint8Array(8)})
+    assert.notEqual(escapedWrite.status,200)
+    assert.equal(fs.existsSync(path.join(outside,'new.nii')),false)
+  } finally { fs.rmSync(outside,{recursive:true,force:true}) }
+  console.log('server security checks passed, including symlink escape rejection')
 } finally {
   child.kill('SIGTERM')
   fs.rmSync(root, { recursive: true, force: true })

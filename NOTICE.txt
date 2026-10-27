@@ -1,0 +1,5 @@
+Brainana Align 0.16.84 incorporates SFTP/known-host verification and test fixtures adapted from Brainana Viewer, https://github.com/brainana/brainana-viewer (main retrieved 2026-10-16). Copyright (c) the Brainana Developers. Distributed under the GNU Affero General Public License v3; see LICENSE. Complete corresponding source is supplied in the release source ZIP and full release bundle. Third-party dependencies retain their respective licenses.
+
+Architecture comparison for 0.16.84 used Brainana Viewer commit aaa47a989329f9b42c97a592ad0801b7d896216e, retrieved 2026-10-20. Existing adapted SFTP code retains its prior attribution.
+
+Optional JIP registration: the companion application and modified headless adapter retain the JIP and FFTW notices provided with their complete shared source. See Source/JIP and its licenses. Align exchanges private working images and physical transformations through an isolated process.

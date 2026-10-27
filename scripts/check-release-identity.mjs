@@ -2,14 +2,16 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
-const meta = JSON.parse(fs.readFileSync(path.join(root,'source','VERSION.json'),'utf8'))
+const meta = JSON.parse(fs.readFileSync(path.join(root,'apps/align','VERSION.json'),'utf8'))
 const checks = [
-  ['source/version.mjs', JSON.stringify(meta.version)],
-  ['source/version.mjs', JSON.stringify(meta.buildId)],
-  ['source/version.env', `VERSION=${JSON.stringify(meta.version)}`],
-  ['source/version.env', `BUILD_ID=${JSON.stringify(meta.buildId)}`],
-  ['source/package.json', `"version": "${meta.version}"`],
-  ['source/src/app/bootstrap.ts', `v${meta.version}`],
+  ['apps/align/version.mjs', JSON.stringify(meta.version)],
+  ['apps/align/version.mjs', JSON.stringify(meta.buildId)],
+  ['apps/align/version.env', `VERSION=${JSON.stringify(meta.version)}`],
+  ['apps/align/version.env', `BUILD_ID=${JSON.stringify(meta.buildId)}`],
+  ['apps/align/package.json', `"version": "${meta.version}"`],
+  ['package-lock.json', `"version": "${meta.version}"`],
+  ['apps/align/src/version.ts', JSON.stringify(meta.version)],
+  ['apps/align/src/main.ts', 'alignmentLayout(APP_VERSION)'],
   ['generated/Info.plist', `<string>${meta.version}</string>`],
   ['generated/Info.plist', `<string>${meta.bundleVersion}</string>`]
 ]

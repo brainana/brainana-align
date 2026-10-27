@@ -1,0 +1,6 @@
+{
+  "origin": "Reviewed JIP 0.4.0 source: engine/shared/transform_coordinates.inc",
+  "release": "0.4.0",
+  "sha256": "baae0db327479b1df077acb29268dc0555de586a7ef2b6fd62a3739199dbcad6",
+  "policy": "Frozen resampling body, not regenerated from the candidate. Runtime driver verifies fixture hash through its Python wrapper."
+}

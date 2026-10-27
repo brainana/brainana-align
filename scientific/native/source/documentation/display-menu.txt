@@ -1,0 +1,118 @@
+!0 0
+                 JIP DISPLAY PROGRAM: MAIN MENU
+              1) input options from shell window
+              2) file formats
+	      3) display convention
+	      4) coordinate system
+	      5) overlays & wire frames
+	      6) regions of interest (ROI)
+
+!1 0 (input options from shell window)
+>display-startup.txt
+
+!2 0 (file formats)
+>file-format-menu.txt
+
+!3 0 (display convention)
+	      {{ display convention }}
+
+jip uses the standard convention for localizaling a voxel within a volume. The position of 4-dimension voxel
+(i j k t) within a volume of dimension (Nx Ny Nz Nt) is given by t*Nx*Ny*Nz + k*Nx*Ny + j*Ny + i, which is
+to say that the x dimension moves fastest, the y dimension 2nd fastest, and so on.
+
+The orientation of a volume on display depends only upon the voxels and program setting, but not upon the
+coordinate system attached to the voxels. In mosaic mode, voxels in the i-j plane are shown, with the
+k index start at 0 in the upper left panel and increasing in panels to the right and down. Within each
+panel, the (i j) = (0 0) voxle is shown at the bottom left unless the "-y" option is used; in that case,
+the origin is the top left (e.g., the y dimension is swapped up-down). The first convention is useful for
+displaying files that use the X11 convention, where the image origin is the top left pixel, or for displaying
+data using the DICOM convention, which is rotated by 180 degrees with respect to the NIFTI convention.
+Without the "-y" option, most unregistered images will appear upside-down. The templates provided with
+the jip package are designed to display correctly without the "-y" option, meaning that a rotation generally
+will be required during alignment.  This is somewhat inconvenient, but the up-down orientation was selected
+for compatability with display programs like FSLView and, as much as possible, with the intention of NIFTI.
+
+In tri-planar display mode, there are two different "standard" display orientation that can be used after
+loading data. These 2 modes are used to accomodate both rodent and human/primate data, which generally use
+different conventions as a result of the different orientations of the brains in the scanner, as well as
+the fact that most rodent histology is displayed in the coronal orientation. Most rodent MRI data is
+collected in the coronal view, but most NIFTI display packages assume that the i-j plane is an axial view
+of the human brain. In short, display rodent data in the default mode with "Y vs Z" as the text field above
+the top right part of the display. For human or non-human primate data, switch this orientation to "Z vs Y".
+The default tri-planar orientation is designed for rodents. To change the default on program entry, use
+the "-Y" option.  If this is the common usage, set this as "alias xd ~/jip-current/bin/display -Y".
+
+!4 0 (coordinate system)
+	      {{ coordinate system }}
+
+The spatial coordinate system of jip is very simple. Only the resolution (dx dy dz), origin (Ox Oy Oz),
+and direction (Dx Dy Dz) of progression are use to convert (i j k) voxels to (x y z) coordinates:
+	      |x|   |Dx  0  0 |  |i * dx| |Ox|
+	      |y| = |0   Dy 0 |* |j * dy|+|Oy|
+	      |z|   |0   0  Dz|  |k * dz| |Oz|
+In this system, the first voxel in the data array at (i j k) = (0 0 0) is the origin, the distance between
+voxels is given by the resolution, and spatial steps occur with increments of +-1 given by the direction
+vector. There is no particular anatomical convention assigned to the spatial coordinates, or even to the
+voxel coordinates, given the differences between rodents and primates.
+
+NIFTI compatability
+-------------------
+While the NIFTI format can always accommodate the jip convention, the reverse is not always true. The jip
+display software will properly reflect the coordinate convention of NIFTI, but it is important to realize
+that reading a NIFTI file and writing another file (either NIFTI or some other format) through jip can
+change the convention of the new file under some circumstance. Namely, jip does not provide for (x y z)
+coordinate systems that are rotated with respect to the corresponding (i j k) voxels. If data are registered
+through jip software, this won't be an issue, as the output will be NIFTI compatible. If there is any
+doubt about voxels and coordinates, 1) the jip display tools show both voxels and coordinates, and 2) the
+jip data file header is a simple ASCII file, so the origin, direction, and resolution can be found there.
+In summary:
+   1) The display program will correctly indicate coordinates for any NIFTI file.
+   2) Data sets that are run through "jip" to create new files will always have coordinates that
+      either are parallel or anti-parallel with the respective voxel indices.
+   3) For reason #2 above, don't use alignment templates with rotations between the voxel indices (i,j,k)
+      and the coordinates (x,y,z).
+
+!5 0 (overlays & wire frames)
+	      {{ overlays & wire frames }}
+
+Overlays are associated with voxel indices and are the basis for all averages across regions of interest;
+this includes display of time series or output of the average signal change across an ROI. There are 3
+ways to create an overlay:
+1) Use the R mouse button: Click and drag down and to the right.
+2) If an activation is overlaid on the image, L click on the "n" button above the image,
+   and then select an activated area. Contiguous voxels above the activation threshold will be
+   combined into an overlay.
+3) When a 2D wire frame is drawn, closing the wire will cause it to be filled with an overlay.
+   Alternatively, a closed wire frame can be filled at any time using the "F" text button.
+
+Wire frames employ spatial coordinates and thus translate across different resolutions. To create a wire
+frame, R click on the "n" or "N" text button. You will be prompted by "L-button=draw, <esc>=cancel".
+Use the L mouse button to click on the image. For the first line segment, 4 clicks are required to
+define a smoothly curved segment using Bezier curves. Subsequently, only 3 clicks are required, because
+the 4th point is the endpoint of the previous segment. Any segments can be "undone" without exiting the
+drawing routine whenever the prompt includes "u=undo". A wire can be closed into a loop whenever the
+prompt includes "c=close"; closing a wire joins the first and last points and fills the wire with an overlay.
+
+To load pre-defined overlays, use the "-o" options. Predefined wire frames use the "-w" option.  E.g.,
+   xd file.nii -o overlay-list.dat -w wire-list.dat
+The formats of these files are shown under the "file formats" entry from the main help menu.
+
+!6 0 (regions of interest)
+	      {{ regions of interest: ROI }}
+
+ROIs are defined by overlays. Whenever an overlay is shown, the graph data displays information averaged
+across the overlay, and a new button ("R") appears below the graph display. This button can be used to
+write the ROI to a file that generally is named ".roi"; this file name is shown on the graph window label
+bar and changes if events are removed from a GLM fit. The output that goes to the file is the same information
+that is displayed in the graph window. For instance, if a time series has been converted to percent with
+the baseline drift removed, this will go to the file. Additionally, the GLM total fit and the fit for each
+event will be sent to the output file.
+If a series of overlays have been loaded at program startup using the "-o overlay-list.dat" option,
+then all ROIs will be output to the file by R clicking on the "R" text button.
+
+This same method can be used to determine average signal changes. For instance, the GLM output for "event 1"
+includes files P-1.bfloat (or .nii), S-1.bfloat, and T-1.bfloat.  To see signal changes averaged across
+an ROI, do this:
+    xd S-1.bfloat S-2.bfloat S-2-1.bfloat -o overlay-list.dat
+Bring up the graph and R click on the "R" button to output the average signal changes across each predefined
+overlay.

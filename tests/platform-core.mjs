@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import path from 'node:path'
 import fs from 'node:fs'
 import os from 'node:os'
-import { applicationPaths, browserLaunchSpec, executableCandidates, resolveExecutable, runtimeRelativePath } from '../source/platformCore.mjs'
+import { applicationPaths, browserLaunchSpec, executableCandidates, resolveExecutable, runtimeRelativePath } from '../apps/align/platformCore.mjs'
 
 const home = path.join(path.sep, 'Users', 'tester')
 const mac = applicationPaths({ platform: 'darwin', home, version: '1.2.3', env: {} })

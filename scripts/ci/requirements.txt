@@ -1,0 +1,6 @@
+# Reproducible build tools; worker runtime dependencies live in scientific/requirements.txt.
+cmake==3.31.6
+ninja==1.11.1.3
+
+# Independent displacement-file reader used in tests only; excluded from frozen worker.
+SimpleITK==2.5.3

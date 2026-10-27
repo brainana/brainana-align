@@ -1,3 +1,4 @@
+import { inspectMachO } from './macho.mjs'
 import fs from 'node:fs'
 import path from 'node:path'
 import crypto from 'node:crypto'
@@ -7,7 +8,7 @@ const here = path.dirname(fileURLToPath(import.meta.url))
 const root = path.resolve(here, '..')
 const appPkg = process.argv[2] ? path.resolve(process.argv[2]) : path.join(root, '..', 'apppkg')
 const app = path.join(appPkg, 'Brainana Align.app')
-const source = path.join(root, 'source')
+const source = path.join(root, 'apps/align')
 const meta = JSON.parse(fs.readFileSync(path.join(source, 'VERSION.json'), 'utf8'))
 const failures = []
 const read = p => fs.readFileSync(p, 'utf8')
@@ -48,10 +49,30 @@ if (fs.existsSync(sourceDist) && fs.existsSync(appDist)) {
   if (JSON.stringify(rels)!==JSON.stringify(appRels)) failures.push('Packaged frontend file list differs from source dist')
   for (const rel of rels) if (fs.existsSync(path.join(appDist,rel)) && hash(path.join(sourceDist,rel))!==hash(path.join(appDist,rel))) failures.push(`Frontend hash mismatch: ${rel}`)
 } else failures.push('Missing source or packaged dist')
+// Inspect the actual packaged UI, runtime files, architectures, and deployment target.
+if (fs.existsSync(appDist)) {
+  const assets = path.join(appDist, 'assets')
+  const js = fs.readdirSync(assets).filter(n => n.endsWith('.js')).map(n => read(path.join(assets,n))).join('\n')
+  for (const label of ['Rigid, 6 parameters','Similarity, 7 parameters','Anisotropic scale, 9 parameters','Affine, 12 parameters','landmark-transform','guided-setup','Start from image geometry']) if (!js.includes(label)) failures.push(`Packaged UI missing ${label}`)
+}
+for (const name of ['sftpClient.mjs','platformCore.mjs','runtime.mjs','version.mjs','version.env']) {
+  if (!fs.existsSync(path.join(runtime,name)) || hash(path.join(['sftpClient.mjs','platformCore.mjs','runtime.mjs'].includes(name)?path.join(root,'packages/core-server'):source,name)) !== hash(path.join(runtime,name))) failures.push(`Runtime source hash mismatch: ${name}`)
+}
+const cli=read(path.join(source,'server.mjs')).replace('@brainana/core-server/runtime.mjs','./runtime.mjs')
+if(read(path.join(runtime,'server.mjs'))!==cli) failures.push('Browser server composition mismatch')
+const versionNumber = s => s.split('.').reduce((n,v,i) => n + Number(v) * [65536,256,1][i],0)
 for (const arch of ['darwin-arm64','darwin-x64']) {
   const node = path.join(runtime, arch, 'node')
   if (!fs.existsSync(node)) failures.push(`Missing bundled runtime ${arch}`)
-  else if (!(fs.statSync(node).mode & 0o111)) failures.push(`Bundled runtime not executable ${arch}`)
+  else {
+    if (!(fs.statSync(node).mode & 0o111)) failures.push(`Bundled runtime not executable ${arch}`)
+    const binary = fs.readFileSync(node)
+    const cpu = arch === 'darwin-arm64' ? 0x100000c : 0x1000007
+    try {
+      const inspected = inspectMachO(binary,cpu)
+      if(versionNumber(meta.minimumMacOS) < inspected.minimumMacOS) failures.push(`Declared minimum macOS ${meta.minimumMacOS} is below runtime requirement for ${arch}`)
+    } catch(error) { failures.push(`${arch}: ${error.message}`) }
+  }
 }
 if (failures.length) {
   console.error('RELEASE VERIFICATION FAILED')

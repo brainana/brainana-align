@@ -1,0 +1,327 @@
+!0 0
+                 GENERAL LINEAR MODEL: MAIN MENU
+              1) input options from shell window
+              2) GLM control file
+              3) stimulus files (per run) and event types
+              4) table files (per run)
+              5) IRF (impulse response function)
+	      6) interface with xd
+
+!1 0 (input options from shell window)
+This program is invoked as follows from the unix/Linux shell window:
+
+Syntax: executable [GLM control file name] [optional arguments]
+
+optional arguments:
+-h for input arguments
+-H for more menu help
+-p to convert to percent change on output for S-n files
+-s for small memory allocation
+-v for verbose output
+-d [divisor] to divide output by divisor for S-n files
+
+!2 0 (GLM control file)
+		{{ GLM control file & options }}
+
+              1) file format
+              2) conditions
+              3) baseline-terms
+              4) normalize-BOLD
+              5) AR (auto-regression)
+              6) multiple-comparisons
+              7) convolve-table
+
+!2 1 (GLM file format)
+A GLM control file is the "top level" that defines the GLM to be used for analysis.
+The first several lines describe options to used in the analysis, such as the number
+of terms describing baseline signal drift, the conditions to be tested, the impulse reponse model,
+as so on.  Refer to the last menu for a desciption of each of these options. It is required to
+list conditions for testing (the whole point of the analysis), and the keyword "runs" or "runs:"
+is also required. Following that line, all subsequent lines are interpreted as containing
+either 2 or 3 entries. The first 2 entries are required and are the name of the file and the description
+of stimuli used in each run. Optionally, one may also list a table file that has entries for each time point
+and contains things (eye position, blood pressure, etc) that can only be entered explicitly in this way.
+  An example GLM control file follows:
+              baseline-terms 3
+              IRF BOLD-rat
+              convolve-table 3 4
+              conditions 1 2 12 1-2
+              runs:
+              ../010/data.nii ../010/stim.glm  ../010/table.dat
+              ../011/data.nii ../011/stim.glm  ../011/table.dat
+              ../012/data.nii ../012/stim.glm  ../012/table.dat
+
+!2 2 (conditions)
+		{ GLM control file: conditions }
+
+Multiple conditions are listed together with one or more spaces separating them: "conditions L R L-R".
+
+A "condition" refers to a specific statistical test within the GLM. For instance, if there are
+two events defined in the GLM with names L and R for stimulation of a left or right sensorimotor area,
+then one might want to create statistical maps corresponding to the individuall events, the sum of evnets,
+and the difference of events. The sum of events is specified by just concatenating the individual
+events to be "LR".  The diffence of the two events could be either "L-R" or "R-L". If there were 4
+events labeled as 1, 2, 3, and 4, then condition 12-34 means "+1+2-3-4", so that everything that occurs
+after the "-" sign is negative. If one want to put values other than 1 or -1 in the contrast vector,
+such as "event#1 - 0.5 * event#2", then the only way to do this to scale the event within the stimulus
+to have a magnitude different from 1. This is an uncommon need, but it does occur.
+
+One can create F tests as well as T tests. An F test, which asks of either of one or more specific
+tests reached significance, is created by inserting a common. The condition "L,R" is an F test for
+either L or R, whereas "LR" is a T test for the sum of L and R.
+
+!2 3  (baseline & normalization)
+		{ GLM control file: baseline }
+
+baseline-terms 3
+This command takes one integer argument, which is the number of terms to use in a polynomial describing
+signal drift. The number of terms is limited to 4. A common entry would "baseline-terms 3", which includes
+a DC signal level, a linear drift term, and a quadratic drift term.
+
+!2 4  (normalization)
+		{ GLM control file: normalization }
+
+normalize-BOLD
+This option takes no argument. If present, runs will be globally scaled to account for diffences in signal
+intensity. This scaling assumes that different factors might be present in the data due to applied scaling
+of data by the scanner, differences in coil loading, etc.  Percent changes in BOLD signal represent
+a physiological quantity independent of overall scale factor, so higher absolute BOLD signal changes
+will accompany higher global signal. Hence, global scalings for each run are used as multiplicative factors
+to correct the overall scale of individual runs.
+  Do no use this command for IRON fMRI. If global signal differences are dominated by a progressive loss of
+iron oxide contrast agent from the blood, the scaling is different: larger global signals generally will
+accompany smaller task-induced signal changes. I say "generally" because the actual correction depends upon
+the level of signal attenuation produced by contrast agent.
+
+!2 5 (auto-regression)
+Auto-regression can be used to determine the degree of temporal correlation in fMRI data in order to
+whiten the data, thereby removing correlations from the residual signal ("noise") that is the difference
+between the data and the fit.  Temporal correlations reduce the actual degrees of freedom (DOF) in data,
+so the DOF are over-estimated if correlations are not taken into account.  Actually, the size of the effect on
+statistical results is very small: not accounting for correlations decreases p-values in fixed-effects
+analyses (increasing significance) by a slight amount, and generally decreases p-values (under-estimates
+significance) by a slight amount in random-effects analyses.
+ To account for temporal correlations, use "AR [number] [mm]", where [number] is the degree of auto-correlation
+(e.g., "1" accounts only for nearest neighbors in time) and [mm] is the spatial extent of a smoothing kernel
+used to determine the auto-correlation structure at each voxel.  If [mm] is not given (e.g., "AR 2"), the
+smoothing kernel is 1 mm.
+ Using this feature requires 2 passes through the data: 1 to determine the correlations, and 1 to analyze the
+data after pre-whitening the data.  Again, effects are small, so generally insert this option only during
+the final pass of analysis.
+ The method used is described in the appendix of the 2002 paper by Keith Worsley:
+"A General Statistical analysis for fMRI data."  Worsely et al. 2002; NeuroImage 15(1):1-15.
+
+A final note: for standard BOLD fMRI on/off paradigms, the degree of auto-correlation generally increases
+with field strength due to physiological noise, so small values (1) are appropriate at low field but slightly
+higher values (2 or 3) should be used at high field (e.g., 9.4T). On the other hand, there are sources of
+"noise" that can increase the auto-correlations: e.g., motion, field drift producing apparent motion in
+single-shot fMRI, imperfect modeling of the signal for pharmacological fMRI or event-related fMRI.
+
+!2 6 (multiple-comparisons)
+P-values are corrected for multiple comparisons using the Gaussian random fields approach by Worsley et al.:
+"A unified statistical approach for determining significant signals in images of cerebral activation."
+Human Brain Mapping 1996; 4:58-73.
+Refer to equation 3.1 in that paper for corrected p-values, using the probability density p_3(t) from
+Table II under heading "B" (t field with v degrees of freedom).
+
+To use this feature, insert "multiple-comparisons [resels]", where [resels] is the number of independent
+resolution elements. Resels differ from the number of voxels in several ways. First, smoothing decreases
+the number of independent elements in an image. If 2-fold smoothing is used in each direction, resels
+are reduced 8-fold in a 3D image volume.  Additionally, one may reduce resels by excluding voxels outside
+the brain.
+
+By default, or by using "multiple-comparisons 0", this feature is turned off and so p-values are uncorrected
+for multiple comparisons. In this case, higher thresholds are needed to exclude false positives. When
+multiple comparisons are corrected using an appropriate value for the "resels", then a threshold of 0.01
+is appropriate.
+
+!2 7 (convolve-table)
+By default, a table event is not convolved with the impulse response function (IRF) to create a basis
+function in the GLM. To convove table events with IRF, list the events as the argument to this key word:
+             convolve-table 1 3 4
+A motion-correction parameter, for instance, is intended to account for shifts in signal intensity that
+correspond to motion at each time point without delay. A typical task-related response, on the other hand,
+occurs with delay imposed by the hemodynamic response. All events in the stimulus file are always
+convolved with the IRF, if it exists, except for table events, which are not convolved unless indicated.
+
+!3 0 (stimulus files)
+		{{ stimulus files (per run) }}
+
+              1) file format
+	      2) events
+              3) square  events
+              4) gamma   events
+              5) table   events
+              6) other   events
+	      7) ignored time points
+
+!3 1 (stimulus file format)
+		{ Stimulus files: basic format }
+
+3 300    # [TR] [run duration] on the 1st line; here, there are 100 time points in the run.
+         # a blank line is used to precede each stimulus event; the rest of the file is events
+1 square # [event identifier] [event type]
+30. 60.  # [ON] [OFF] in time units (generally seconds)
+150. 180.# ... and so on.
+         # Another blank indicates a new event
+2 square # event identifiers can 1-9, a-z, A-Z
+90. 120. # ...
+210. 240.# ...
+         # another event is next ...
+3 table 2# this means that event 3 uses column 2 from the table file.
+         # again blank ...
+-1       # event "-1" is a special flag indicating that the following points should be ignored
+0 5      # These number refer to time point indices (NOT seconds)
+127 132  # This means ignore time points 127,128,129,130,131,132
+
+!3 2 (events)
+			{ events in the GLM }
+In the usual GLM parlance, an "event" is a stimulus or a series of stimuli of some specified shape that
+becomes a single regressor within the model. By fitting the data, a single scaling factor is applied to
+each event, and the magnitude of the event can be tested for statistical significance. Event shapes are
+defined from the timing and nature of applied stimuli. For instance, rapid ON/OFF neural events have a
+"square" shape to indicate step functions in time, but the actual regressor formed from square events will
+have a slower onset and offset if a hemodynamic response function is employed. Similarly, one can define
+the response to a single drug infusion with a "gamma" shape, but multiple overlapping infusions may produce
+an overall shape that is very different for that event.
+  Regressors in the GLM can be visualized in two ways:
+  1) a file named "basis.dat" is generated by running the GLM executable; this file contains all the basis
+     functions (regressors) used the GLM, and
+  2) the time graph in the display executable will show the overall fit as well as individual fits; note
+     that individual events can be displayed separately or omitted from the time series in this display.
+
+Within each stimulus file, allowed event identifiers are 1-9, a-z, A-Z.
+Allowed event types are "square", "gamma", "table", "drug-IRF", "ramp-down", "ramp-up", "sine", "cosine".
+
+!3 3 (square events)
+			{ square events in the GLM }
+A "square" event is used to represent a neural response that with a rapid ON/OFF relative to the response
+of the blood supply. "ramp-down" and "ramp-up" events are provided mostly as tests of this assumption.
+While a separate magnitude can be assigned for each stimulus within a given event, I can't imagine a
+situation where this would be useful, so leave off the magnitude.
+   [event ID] [event type]			L square
+   [ON time] [OFF time] [optional magnitude]	30 60
+   [ON time] [OFF time] [optional magnitude]	90 120
+   ...						150 180
+
+!3 4 (gamma events)
+			{ gamma events in the GLM }
+A "gamma" event is useful for modeling the response to a drug. In this case, the optional magnitude can
+sometimes be useful if different drug doses are used AND if the dose response is in a linear range.
+Whereas most events have a defined end, the end of gamma event is the end of a run. Overlapping stimuli
+within a single event are added; this can be very useful for modeling repeated micro-injections.
+A gamma function has the form t*exp(-t/tau), where t is time.
+   [event ID] gamma [tau]			C gamma 100  # cocaine response
+   [ON time] [optional magnitude]		300  1.      # dose A
+   [ON time] [optional magnitude]		2100 2.      # dose 2A for linear response
+
+!3 5 (table events)
+			{ table events in the GLM }
+A "table" event is used to bring measurment data into the GLM (e.g., blood pressure, eye traces, ...).
+Recall that each run can list a table event file in GLM control file. The table event specifies
+which column of the table to use.
+   [event ID] table [column number in table]	B table 3  # blood pressure in column 3
+
+!3 6 (other events)
+			{ other events in the GLM }
+drug-IRF
+--------
+A "drug-IRF" event uses an impulse response function (IRF) to estimate the effect of an extended infusion.
+A gamma function with tau1 is convolved with a time interval. Optionally, this occurs after convolving
+the interval with a single exponential decay with tau2 to represent drug elimination from the blood.
+   [event ID] drug-IRF [tau] [optional tau2]	R drug-IRF 100 30 # remifentanil response
+   [ON time] [OFF time] [optional magnitude]	60 90             # 30-second infusion
+
+sine & cosine
+-------------
+"sine" and "cosine" functions exist for analysis of cyclical responses, but these haven't been used or
+tested much.
+   [event ID] sine [period]			1 sine 30   # basis function for retinotopic mapping?
+
+   [event ID] cosine [period]			2 cosine 30 # basis function for retinotopic mapping?
+
+ramp-down & ramp-up
+-------------------
+These events events are provided mostly to test assumptions about neural responses. They are similar to
+square events, but they either decrease or increase linearly over the range.
+   [event ID] [event type]			L square
+   [ON time] [OFF time] [optional magnitude]	30 60
+   [ON time] [OFF time] [optional magnitude]	90 120
+   ...						150 180
+
+!3 7 (ignored time points)
+			{ ignored time points in the GLM }
+Refer to the "file format" section for stimulus files.  To ignore events, use an "event type" of -1 in
+the stimulus file. The following ranges then indicate data points to ignore, with 0 being the first data
+point.  Note that these number indicate time indices, NOT time per se.  There are at least two ways to
+ignore time points: 1) use a separate regressor for each ignored point, or 2) multiply each side the GLM
+by an "inclusion matrix" of dimension n x n, where n is the number of time points.  This program uses the
+latter method. The inclusion matrix is the identity matrix by default.
+
+!4 0 (table files)
+			{ table files in the GLM }
+The format of a table file is very simple. The first line contains a list of labels.
+All subsequent lines contain a number of entries equal to the number of labels.
+All entries within a line are separated by one or more spaces. Excluding the first line
+(labels), the number lines must equal the number of time point in the run.
+The first line should be an increasing list of the time points, although that is not required, 
+Stimulus files can create events from the table file by referencing a column number,
+which starts at 0. In the example below, "t" is the 0th column, "eye-X" is the column 1, ...
+
+            t eye-X eye-Y fixation blood_pressure
+            0 0.382647 -0.858746 97.1 120.1
+            1 -0.6565377 2.878979 97.3 120.2
+            ...
+
+!5 0 (IRF files)
+			{ IRF specifications in the GLM }
+An impulse response model is always of the same basic form:
+     IRF(t) = A_delay/T_delay * exp(-t/T_delay)
+	    + A_fast/T_fast   * exp(-t/T_fast)
+	    + A_slow/T_slow   * exp(-t/T_slow) .
+
+To specify the IRF, one needs:
+     3 time constants:  T_delay, T_fast, T_slow
+     2 coefficients  :  A_fast,  A_slow (A_delay is set by requiring IRF(t=0) = 0),
+and the duration and time step for the IRF.
+
+There are 4 "built-in" IRFs that are specified as follows. In each of these cases, the time duration
+of the IRF is 60 seconds and the time step size is 0.1 seconds.
+   IRF BOLD-rat    (T_delay = 0.5s, T_fast = 2.5s, T_slow = 13.5s, A_fast = 0.70, A_slow=-.30)
+   IRF IRON-rat    (T_delay = 0.5s, T_fast = 2.5s, T_slow = 13.5s, A_fast = 0.40, A_slow=0.80)
+   IRF BOLD-monkey (T_delay = 1.5s, T_fast = 4.5s, T_slow = 13.5s, A_fast = 0.70, A_slow=-.30)
+   IRF IRON-monkey (T_delay = 1.5s, T_fast = 4.5s, T_slow = 13.5s, A_fast = 0.40, A_slow=0.80)
+For the monkey IRFs, see Leite et al. in NeuroImage 2002.
+The rat IRFs work well at coarse temporal resolution but have not been tested at sub-second resolution.
+One might expect the fast time constant to be slightly shorter in the rat, due to the smaller MTT.
+
+Alternatively, one can construct an IRF file. In the GLM control file, one points to the file by
+	       IRF [file name]
+As long as the file name is not one of the pre-defined values above, it will be recognized as a file.
+For example, the GLM control file could point to "bold.irf" by "IRF bold.irf", which might look like this:
+	     600. .1  0.5 # [length in seconds] [resolution in seconds] [T_delay]
+	     2.5 13.5     # [T_fast] [T_slow]
+	     0.7 -0.3     # [A_fast] [A_slow]
+
+WARNING: The magnitude of the exponential associated with the delay is calculated to force IRF(t=0) = 0.
+In certain cases (e.g., as when one of the other exponentials is shorter than the delay), the IRF can
+be negative, which can flip the sign of the activation maps. If you use the "notify" flag in the
+GLM control file, the IRF will be output into a file named "HRF.dat" for viewing.
+
+!6 0 (interface with jip-display)
+		{{ interface with jip-display }}
+
+To view the results of the analysis:
+   xd -g glm.dat       ... where glm.dat is the name of the control file.
+Often, one will want anatomy to view the results.
+Exclude the anatomy volumes from the GLM analysis this way:
+   xd -r rem.dat -e anatomy.nii
+
+To output region-of-interest data,
+1) apply an overlay (predefined or interactively defined),
+2) bring up the graph display,
+3) click on "R" on the bottom of the graph window.
+
+Output will go to file ".roi" if no events have been regressed out.
+If some events have been removed from the data/fit, output will go to ".roi-list",
+where "list" contains the event identifiers that remain in the fit.

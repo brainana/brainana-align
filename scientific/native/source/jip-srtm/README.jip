@@ -1,0 +1,49 @@
+This is an analysis package for fMRI data using the general linear model (GLM).
+
+----------------------------------------------------------------------------
+Compilation:
+----------------------------------------------------------------------------
+See if the executable for your machine type already exists. From Unix/Linux,
+find the machine OS and architecture:
+
+unix% uname -s
+Linux
+unix% uname -m
+x86_64
+
+IF THIS DIRECTORY EXISTS,
+cd Linux-x86_64    (or whatever)
+make
+cp jip-glm ../../bin/Linux-x86_64
+
+IF THIS DIRECTORY DOES NOT EXIST,
+mkdir Linux-x86_64 (or whatever)
+cp Linux-i686/makefile Linux-x86_64
+cd Linux-x86_64
+make
+mkdir ../../bin/Linux-x86_64
+cp jip-glm ../../bin/Linux-x86_64
+
+REQUIRED LIBRARIES
+1) jip-specific libraries:
+   Go to $JIP_HOME/lib and read the file README.jip
+2) NIFTI i/o library and znz library
+   Go to $JIP_HOME/nifticlib-1.1.0 and read the file README.jip
+3) Data compression library zlib (needed for znz libary)
+   Go to $JIP_HOME/zlib-1.2.3 and read the file README.jip
+4) Standard system libraries from /usr/lib
+
+----------------------------------------------------------------------------
+Execution:
+----------------------------------------------------------------------------
+alias glm $JIP_HOME/bin/glm   (where $JIP_HOME is the root directory)
+glm
+glm -h
+glm -H
+
+----------------------------------------------------------------------------
+Documentation:
+----------------------------------------------------------------------------
+This (such as it is) resides on directory $JIP_HOME/documentation.
+Documentation is designed to be used from the programs.  E.g.,
+"glm -H" reads the file "glm-menu.txt" on $JIP_HOME/documentation.

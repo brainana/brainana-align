@@ -1,0 +1,140 @@
+!0 0
+		{{{{ File formats }}}}
+
+              1)  Image data
+              2)  Overlays and wire frames
+	      3)  GLM files
+
+!1 0 (Image data formats)
+		{{ Image data formats }}
+
+              1) jip data files:	       .bshort, .ushort, .bfloat, .blong
+	      2) NIFTI data files:	       .nii
+	      3) other data files:	       .img, fs-fast
+
+!1 1 (jip data files)
+		{{ jip data files }}
+"jip data files": binary files with ASCII headers (.bshort, .bfloat, .blong, .ushort)
+This format consists of a binary file with a data type encoded in the file name,
+plus a keyword-delimited ascii header file specifying the dimensions. For a 4-dimenional matrix
+of size (nx,ny,nz,nt), the binary file contains nx*ny*nz*nt for real data and twice this number
+for complex data in (real,imaginary) or (magnitude,phase) pairs. Data storage is short integers
+(2 bytes = 16 bits) for .bshort for .ushort (unsigned short) files, floating point real numbers
+(32 bits) for .bfloats, and long integers (32 bits) for .blong files. While all these files are
+supported on input, only .bshort and .bfloat are supported on output.
+   For each file of type file.bshort, there must be a header file named file.hdr. This file gives
+the 4 dimensions plus other information like the resolution and the origin and step direction of
+the coordinate system.  A typical header file looks like this:
+      x 64   # optionally, use "matrix 64 50 42"
+      y 50   #         or even "matrix 64 50 42 200"
+      z 42
+      t 200  # number of time points
+      byte-order 1                # specifies PC byte-order
+      data-type magnitude         # magnitude (default), complex or real-imaginary, magnitude-phase
+      resolution 0.25 0.25 0.5 3  # usually millimeter units (1st 3) and seconds (last)
+      origin -8 12 6.2            # usually mm; the (0,0,0) point has this coordinate value
+      direction 1 -1 -1           # the direction of increments; here, y and z count down
+      information:		  # ignore everything after this keyword
+      TR 1200
+      TE 10
+      segments 16
+      blah, blah, blah
+
+Default values:  resolution 1 1 1 0  (the default time resolution is set to 0!)
+                 origin 0 0 0
+                 direction 1 1 1
+                 data-type magnitude
+
+
+!1 2 (NIFTI data files)
+		{{ NIFTI data files (.nii) }}
+	   See http://nifti.nimh.nih.gov for more information about this file format.
+This format is supported on input and output. However, note that off-diagonal elements are not preserved
+in the transformation matrix between voxels and coordinates. This is because the internal representation
+of coordinates is one that is linear versus voxels. For instance, if i is the voxel index in the x
+direction, then x = origin_x + resolution_x * direction_x * i.
+
+What does this mean in practice?  The display program will always give the proper coordinates
+for a NIFTI file. However, when a file is read in with "jip" and output as a new file, the new file
+will always have voxel indices (i,j,k) aligned with (x,y,z) coordinates. So, the process of registering
+a data file to a given space (Paxinos, etc.) will put the output into coordinates aligned (or anti-aligned)
+with voxels.  For this reason, you should use templates with aligned voxels.
+
+!1 3 (analyze and fs-fast data files)
+			{{ analyze files (.img) and fs-fast files }}
+analyze files (.img)
+   This format is supported on input and output, but use nifti (.nii) instead when possible.
+   This format is very similar to the nifti format. See the documentation inside nifti1.h, which can be
+   downloaded from http://nifti.nimh.nih.gov
+
+"fs-fast" files
+   For reason that aren't clear, the data format for time series analysis used to use separate files for
+   each slice (e.g., f_017.bshort for slice 17) plus a separate header file (e.g., f.bhdr). jip can read
+   these files, but I discourage it.  Use the nifti format instead.
+
+!2 0 (overlay and wire files)
+		{{ overlays and wire frames }}
+
+              1) overlay files
+	      2) wire frame files
+	      3) list files for overlays and wire frames
+
+!2 1 (overlay files)
+		{ overlay files }
+
+The default file name is .ovl for reading/writing overlays, but this file can be
+renamed and included in a list of pre-defined overlays (see "-o" option on startup).
+
+Overlay files are ASCII text files containing either 3 or 4 entries per line.
+The first 3 entries are the (x,y,z) indices that define one voxel in 3-dimensional space.
+The optional 4th entry is a weighting factor between 0 and 1, with a default value of 1.
+The weight provides a means to account for patial voluming; the weight is generated whenever
+a wire frame is filled in the display or alignment programs by down-sampling from high resolution
+to the lower resolution of the voxel space.
+
+Overlays are associated with voxel indices, so they are specific to a given matrix size.
+There size of the matrix is not stored in the overlay files. Errors will be reported when voxel
+indices fall outside these limits whenever overlays are applied to images.
+
+!2 2 (wire frame files)
+		{ wire frame files }
+
+The default file name is .wire for reading/writing wire frames, but this file can be
+renamed and included in a list of pre-defined overlays (see "-w" option on startup).
+
+Wire frame files are ASCII text files containing 4 entries per line. The first 3 entries
+are the (x,y,z) coordinates define control points for Bezier curves.  The 4th entry is a
+"pen down" (1-n) or "pen up" (0) flag. The "pen down" flag encodes the color of the wire frame,
+and an entry of 0 in this column terminates a wire frame segment. If the last point of the wire
+frame matches the first point, it is a closed wire frame. Closed wire frames can be filled by
+the display programs and turned into overlays.
+
+Wire frames are associated with voxel spatial coordinates, so they are independent of matrix size
+or resolution. This provides a nice way to span different spaces with a region of interest.
+
+!2 3 (overlay and wire list files)
+		{ list files for overlays and wire frames }
+
+Lists of pre-defined overlays or wire framss can be loaded in the jip-display program
+using the -o and -w options, respectively:
+           jip-display -o overlay-list.dat -w wire-list.dat
+
+Within one of these list files, one overlay or wire frame is defined per line using
+	   [name] [file location] [color]
+For an overlay file list:
+           caud /homes/1/me/data/caudate.ovl red
+           put  /homes/1/me/data/putamen.ovl green
+
+A list file containing wire frames is identical except that wire files should be referenced.
+
+!3 0 (GLM files)
+		{{ GLM files }}
+
+There are several files that are used for a GLM (General Linear Model) of temporal data:
+      GLM control file
+      stimulus files
+      table files
+      IRF (impulse response function) files
+
+Within the display package, "jip-display -G glm.dat" will load the full GLM. For more information
+about the glm, "jip-glm -H"

@@ -1,0 +1,4 @@
+#pragma once
+static const char *jip_shared_shader=R"jipshader(
+@JIP_SHARED_SHADER@
+)jipshader";

@@ -21,5 +21,6 @@ LAUNCHER="$(cd "$(dirname "$0")/.." && pwd)/packaging/templates/brainana-align-l
 grep -q 'hw.optional.arm64' "$LAUNCHER"
 grep -q 'sysctl.proc_translated' "$LAUNCHER"
 grep -q 'HARDWARE_ARCH="arm64"' "$LAUNCHER"
-grep -q 'darwin-arm64/node' "$LAUNCHER"
+grep -q 'runtime-command.sh' "$LAUNCHER"
+grep -q 'darwin-arm64/node' "$(dirname "$LAUNCHER")/../runtime-command.sh"
 echo "macOS runtime selection tests passed"

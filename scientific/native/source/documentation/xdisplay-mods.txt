@@ -1,0 +1,36 @@
+bug      3/22/2005 If a failure occurs trying to write "basis.dat", which
+		   is a GLM file containing basis functions that is written
+		   when the GLM control file uses the "notify" flag, ignore
+		   and proceed, rather than crash. This i/o problem generally
+		   occurs when running xdisplay on someone else's disk area,
+		   due to permission violation.
+
+addition 3/23/2005 Whereas using the left mouse button on the activation tails
+		   region ('+' or '-' above colorbar) selects the + or - tail,
+		   using the middle or right buttons changes + to - and vice
+		   versa. This is way to switch between color schemes for
+		   + and -, so that "activation" with IRON, when signal goes
+		   down, can appear as red to yellow.
+addition 4/4/2005  Added F statistic capability.
+bug	 4/4/2005  Changed degrees of freedom df2 to 1 from # events in
+		   calculation of T statistic.
+bug	 4/5/2005  Gamma functions no longer extend past run boundaries.
+addition 4/7/2005  Graphs update (with images) every 5% during p-value calculation.
+bug	 4/12/2005 Instead of just removing a linear trend in tables, remove a polynomial
+		   equal to the order of the GLM baseline.
+bug      4/21/2005 Killing graphs is now handled smoothly.
+change   4/21/2005 '+' and '-' now always affect time.
+bug      4/28/2005 When including table events, orthogonization with respect to the baseline
+		   terms was not correctly performed.
+bug      6/8/2005  The display of red shaded timing windows (stimuli) in the graph window
+		   was incorrect. The duration was extended by 1/2 a time point on both sides.
+bug      6/10/2005 Conversion of log_e to log_10 (-A option) did not work for very small value p-values.
+		   This was fixed by simply scaling values by log_10(e), rather than going back
+		   to p values.
+addition 8/15/2005 "Control-i" interpolates across the zoom factor.
+bug	 8/15/2005 When attempting to load more than one file, where any of the files had < 2 time points,
+		   the GLM baseline addition would cause an error.
+addition 8/15/2005 In tri-plane mode, interpolation in z (slice direction) is now done across zoom factors,
+		   which makes smoother x-z and y-z images.
+addition 9/30/2005 Add ability to read complex data.
+addition 9/30/2005 Add colormap to use light spectrum.

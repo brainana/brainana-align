@@ -1,0 +1,9 @@
+{
+  "name": "@brainana/core-launcher",
+  "version": "0.17.10",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./*": "./*"
+  }
+}

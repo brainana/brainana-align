@@ -1,0 +1,12 @@
+{
+  "name": "@brainana/core-server",
+  "version": "0.17.10",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./*": "./*"
+  },
+  "dependencies": {
+    "ssh2": "^1.17.0"
+  }
+}
