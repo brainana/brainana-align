@@ -5,9 +5,22 @@ import path from 'node:path'
 import crypto from 'node:crypto'
 import {execFileSync,spawnSync} from 'node:child_process'
 import {fileURLToPath} from 'node:url'
+import {createRequire} from 'node:module'
+import vm from 'node:vm'
+import {asarEntry} from '../scripts/ci/asar-path.mjs'
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..'),scratch=fs.mkdtempSync(path.join(os.tmpdir(),'align-publication-'))
 const hash=b=>crypto.createHash('sha256').update(b).digest('hex')
 try{
+ // Exercise the real ASAR reader under both host path implementations.
+ const require=createRequire(import.meta.url),implementation=require.resolve('@electron/asar/lib/filesystem.js'),dependencyRequire=createRequire(implementation)
+ for(const pathApi of [path.posix,path.win32]){
+  const exports={};vm.runInThisContext('(function(exports,require){'+fs.readFileSync(implementation,'utf8')+'\n})')(exports,name=>name==='path'?pathApi:dependencyRequire(name))
+  const reader=new exports.Filesystem(pathApi.resolve('fixture'))
+  reader.setHeader({files:{apps:{files:{align:{files:{'VERSION.json':{size:42},dist:{files:{assets:{files:{'compiled bundle.js':{size:73}}}}}}}}}}},0)
+  assert.equal(reader.getFile(asarEntry(['apps','align','VERSION.json'],pathApi)).size,42)
+  assert.equal(reader.getFile(asarEntry(['apps','align','dist',pathApi.join('assets','compiled bundle.js')],pathApi)).size,73)
+  if(pathApi===path.win32)assert.throws(()=>reader.getFile('apps/align/VERSION.json'),/not found/,'Reproduce the Windows verifier failure')
+ }
  for(const kind of ['valid','missing','hash','commit','platform']){
   const dir=path.join(scratch,kind);fs.mkdirSync(dir)
   const meta={app:'Brainana Align',version:'0.17.10'};fs.writeFileSync(path.join(dir,'VERSION.json'),JSON.stringify(meta));fs.writeFileSync(path.join(dir,'README.md'),'public source');fs.writeFileSync(path.join(dir,'.gitignore'),'.env\nrelease-output/\n')

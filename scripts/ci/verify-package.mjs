@@ -5,6 +5,7 @@ import assert from 'node:assert/strict'
 import crypto from 'node:crypto'
 import {execFileSync} from 'node:child_process'
 import {extractFile} from '@electron/asar'
+import {asarEntry} from './asar-path.mjs'
 const platform=process.platform,arch=process.arch,root=process.cwd(),release=path.join(root,'apps/align/release')
 const candidates=fs.readdirSync(release).map(name=>path.join(release,name)).filter(p=>fs.statSync(p).isDirectory())
 let app,resources,exe
@@ -17,13 +18,13 @@ if(platform==='darwin'){
  resources=path.join(app,'resources');exe=path.join(app,platform==='win32'?'Brainana Align.exe':'brainana-align')
 }
 const asar=path.join(resources,'app.asar'),meta=JSON.parse(fs.readFileSync('VERSION.json','utf8'))
-assert.equal(JSON.parse(extractFile(asar,'apps/align/VERSION.json').toString()).version,meta.version)
+assert.equal(JSON.parse(extractFile(asar,asarEntry(['apps','align','VERSION.json'])).toString()).version,meta.version)
 const hash=b=>crypto.createHash('sha256').update(b).digest('hex')
 const walk=p=>fs.readdirSync(p,{withFileTypes:true}).flatMap(e=>e.isDirectory()?walk(path.join(p,e.name)):[path.join(p,e.name)])
 const dist=path.join(root,'apps/align/dist'),scratch=fs.mkdtempSync(path.join(os.tmpdir(),'align-package-proof-'))
 try{
  for(const file of walk(dist)){
-  const rel=path.relative(dist,file),data=extractFile(asar,'apps/align/dist/'+rel.split(path.sep).join('/'))
+  const rel=path.relative(dist,file),data=extractFile(asar,asarEntry(['apps','align','dist',rel]))
   assert.equal(hash(data),hash(fs.readFileSync(file)),rel);const target=path.join(scratch,rel);fs.mkdirSync(path.dirname(target),{recursive:true});fs.writeFileSync(target,data)
  }
  const js=walk(scratch).filter(p=>p.endsWith('.js')).map(p=>fs.readFileSync(p,'utf8')).join('\n')
