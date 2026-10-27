@@ -1,6 +1,7 @@
 """Small native ITK ABI. Only numerical arrays cross this private boundary."""
 import ctypes as C
 import json
+import os
 from pathlib import Path
 import sys
 import numpy as np
@@ -10,6 +11,10 @@ CALLBACK=C.CFUNCTYPE(C.c_int,C.c_char_p,C.c_void_p)
 P=C.c_void_p
 @lru_cache(maxsize=1)
 def library():
+    # A frozen Windows worker is a one-job process. ITK's persistent pool can
+    # deadlock during DLL teardown after a fully written result. Platform
+    # threads join within each operation and retain the requested thread count.
+    if sys.platform=='win32':os.environ['ITK_GLOBAL_DEFAULT_THREADER']='Platform'
     root=Path(getattr(sys,'_MEIPASS',Path(__file__).parents[1]))
     suffix='.dll' if sys.platform=='win32' else '.dylib' if sys.platform=='darwin' else '.so'
     path=root/'native'/('align-itk.dll' if sys.platform=='win32' else 'libalign-itk'+suffix)

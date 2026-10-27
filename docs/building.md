@@ -154,3 +154,11 @@ The isolated build dependencies are pinned in requirements-macos-intel.txt.
 NumPy1.26 supports this backend: https://numpy.org/doc/2.1/release/1.26.0-notes.html
 The JIP/ITK numerical sources and compiler flags remain unchanged; actual
 source/frozen fields, N4, directions and package tests still qualify this build.
+
+Windows ITK workers explicitly use `ITK_GLOBAL_DEFAULT_THREADER=Platform` before
+loading the native library. Diagnostics showed byte-identical completed fields
+and JSON results followed by a frozen-process shutdown hang with the persistent
+ITK pool. Platform threads retain the requested worker count and join within
+operations, avoiding a persistent pool at DLL unload. Successful process exit,
+source/frozen equality and N4 remain mandatory; output-file existence alone does
+not qualify a worker.
