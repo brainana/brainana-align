@@ -146,3 +146,11 @@ not support `fopen(...,"wbx")`, and C `rename` cannot replace an existing Window
 file. Preserve exclusive creation and never delete the committed destination
 before replacement. This changes I/O only. Golden fixture files use `-text` in
 `.gitattributes` so Windows CRLF checkout cannot alter their checksums.
+
+Intel macOS CI builds the pinned NumPy1.26.4 from source against system Accelerate
+(`-Dblas=accelerate -Dlapack=accelerate`, deployment target14). Its default
+OpenBLAS wheel alone bundled69.3MB of BLAS, exceeding the worker size budget.
+The isolated build dependencies are pinned in requirements-macos-intel.txt.
+NumPy1.26 supports this backend: https://numpy.org/doc/2.1/release/1.26.0-notes.html
+The JIP/ITK numerical sources and compiler flags remain unchanged; actual
+source/frozen fields, N4, directions and package tests still qualify this build.
