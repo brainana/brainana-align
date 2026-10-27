@@ -31,9 +31,9 @@ plan={'platform':SYSTEM,'architecture':ARCH,'python':sys.version.split()[0], 'so
 if A.plan:
     print(json.dumps(plan,indent=2)); raise SystemExit(0)
 
-def run(args, cwd=ROOT, env=None):
+def run(args, cwd=ROOT, env=None, timeout=3600):
     print('+',subprocess.list2cmdline([str(v) for v in args]),flush=True)
-    subprocess.run([str(v) for v in args],cwd=cwd,env=env or ENV,check=True)
+    subprocess.run([str(v) for v in args],cwd=cwd,env=env or ENV,check=True,timeout=timeout)
 
 def configure(source, target, flags):
     target.mkdir(parents=True,exist_ok=True)
@@ -148,7 +148,8 @@ if not A.skip_freeze:
     # Remove the output first so no stale dylib/DLL from another OS can ship.
     shutil.rmtree(ROOT/'generated/scientific-runtime',ignore_errors=True)
     run([sys.executable,'-m','PyInstaller','--clean','--noconfirm','--distpath',ROOT/'generated','--workpath',BUILD/'freeze',SCI/'Align-Registration.spec'])
-    run([sys.executable,SCI/'tests/validate_runtime.py'])
+    run([sys.executable,SCI/'tests/test_runtime_validation_harness.py'],timeout=60)
+    run([sys.executable,SCI/'tests/validate_runtime.py'],timeout=600)
     runtime=ROOT/'generated/scientific-runtime'
     files=[p for p in runtime.rglob('*') if p.is_file() and not p.is_symlink()]
     size_report={'platform':SYSTEM,'architecture':ARCH,'bytes':sum(p.stat().st_size for p in files),'limit':90_000_000,'largest':sorted([{'path':str(p.relative_to(runtime)),'bytes':p.stat().st_size} for p in files],key=lambda v:v['bytes'],reverse=True)[:15]}

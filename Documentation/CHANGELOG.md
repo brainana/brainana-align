@@ -4,6 +4,8 @@ Migrated the existing repository to the current standalone Align source organiza
 
 Hosted-runner corrections: normalize test paths, wait for session/overlay/storage completion, launch SFTP fixtures through Node with POSIX remote paths, scope macOS launcher and POSIX permission checks correctly, and preserve golden fixture bytes on Windows. Disable obsolete FFTW Texinfo regeneration without changing its library. Windows native output uses exclusive temporary creation and atomic replacement in an isolated SDK adapter. Cross-platform float-reference tolerances are explicit; original-platform goldens and same-host rollback/restore remain exact. Manual native diagnostics retain synthetic failure evidence; all release gates remain required.
 
+Runtime-size qualification strips Linux debug symbols and builds the same pinned Intel NumPy1.26.4 against macOS14 Accelerate, avoiding its69MB bundled OpenBLAS. Frozen-worker tests preserve uppercase Windows OS environment keys and stop the full process tree on timeout while saving synthetic failure evidence. Runtime-size reports identify the largest bundled files; the90MB worker limit remains enforced.
+
 # 0.17.10 · pure-image flip inspection · 2026-10-27
 
 - Added Alignment display → Image comparison: Smooth opacity or Flip between images, with manual switching and optional one-second automatic flipping.
