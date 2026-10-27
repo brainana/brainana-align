@@ -123,6 +123,10 @@ for stem in ['jip-engine','jip-engine-repro']:
 itkname='align-itk.dll' if SYSTEM=='Windows' else 'libalign-itk'+('.dylib' if SYSTEM=='Darwin' else '.so')
 shutil.copy2(find(adapter,[itkname,'libalign-itk.dll']),SCI/'native'/itkname)
 if SYSTEM=='Windows':
+    # Keep code, exports and unwind tables; omit unused COFF/debug symbols from
+    # our own compiler outputs. Never strip the MSVC Python/vendor binaries.
+    for name in ['jip-engine.dll','jip-engine-repro.dll','align-itk.dll']:
+        run([prefix/'bin/strip.exe','--strip-unneeded',SCI/'native'/name])
     # CPython's safe DLL lookup does not use PATH. Stage the actual compiler
     # imports beside our libraries and explicitly freeze them in the same folder.
     import re

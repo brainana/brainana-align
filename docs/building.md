@@ -162,3 +162,9 @@ ITK pool. Platform threads retain the requested worker count and join within
 operations, avoiding a persistent pool at DLL unload. Successful process exit,
 source/frozen equality and N4 remain mandatory; output-file existence alone does
 not qualify a worker.
+
+The Windows runtime qualified functionally at93.8MB before symbol removal.
+Only the three MinGW-built Align/JIP/ITK DLLs are stripped with the matching
+compiler's `strip --strip-unneeded`; exported APIs and unwind data remain.
+Python and third-party DLLs are not stripped. The final stripped source/frozen
+workers must still match and exit successfully within the90MB budget.
