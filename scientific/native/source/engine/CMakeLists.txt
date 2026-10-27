@@ -164,3 +164,12 @@ if(BUILD_TESTING AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../../tests/api_driver.
     set_tests_properties(engine-reference-workflow PROPERTIES LABELS "engine;cpu;reference;io" TIMEOUT ${JIP_TEST_TIMEOUT})
   endif()
 endif()
+
+# Isolate SDK typedefs and macros from original numerical names (UINT8, near).
+if(WIN32)
+  foreach(target jip-engine jip-engine-shared jip-engine-repro jip-engine-repro-static)
+    if(TARGET ${target})
+      target_sources(${target} PRIVATE engine_windows_io.c)
+    endif()
+  endforeach()
+endif()
