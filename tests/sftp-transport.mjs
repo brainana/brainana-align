@@ -1,4 +1,5 @@
 import fs from 'node:fs'
+import {spawn} from 'node:child_process'
 import os from 'node:os'
 import path from 'node:path'
 import assert from 'node:assert/strict'
@@ -6,7 +7,7 @@ import { fileURLToPath } from 'node:url'
 import { SftpClient, withSftp, isDirectory } from '../apps/align/sftpClient.mjs'
 const here=path.dirname(fileURLToPath(import.meta.url)); const root=await fs.promises.mkdtemp(path.join(os.tmpdir(),'brainana-sftp-test-'))
 process.env.BRAINANA_FAKE_SFTP_ROOT=root
-const executable=path.join(here,'fake-sftp-server.mjs'); const options={sshExecutable:executable,sshTarget:'fake',timeoutMs:5000}
+const executable=path.join(here,'fake-sftp-server.mjs'); const options={sshExecutable:executable,sshTarget:'fake',timeoutMs:5000,spawnProcess:(_exe,args,options)=>spawn(process.execPath,[executable,...args],options)}
 await fs.promises.mkdir(path.join(root,'data')); await fs.promises.writeFile(path.join(root,'data','a.nii'),Buffer.from('abcdef'))
 await withSftp(options,async sftp=>{
  const st=await sftp.stat('/data'); assert.equal(isDirectory(st),true)
