@@ -17,7 +17,8 @@ for(const name of Object.keys(pkg.scripts).filter(n=>n.startsWith('test:')&&(!na
  if(reason){results.push({name,status:'not-applicable',reason});continue}
  const started=Date.now(),r=spawnSync(process.execPath,[process.env.npm_execpath??path.join(path.dirname(process.execPath),'node_modules/npm/bin/npm-cli.js'),'run',name],{cwd:root,stdio:'inherit',env:process.env,timeout:240000})
  const status=r.status===0?'passed':'failed';results.push({name,status,exit:r.status,signal:r.signal,durationMs:Date.now()-started});console.log(name+': '+status)
- if(status==='failed')break
+ // Finish independent suites so one portability failure does not hide others.
+ // The final exit code still blocks every packaging/publish stage.
 }
 const out=path.join(root,'artifacts/validation');fs.mkdirSync(out,{recursive:true});fs.writeFileSync(path.join(out,`tests-${process.platform}-${process.arch}${nativeOnly?'-native':''}.json`),JSON.stringify({platform:process.platform,arch:process.arch,results},null,2)+'\n')
 if(results.some(v=>v.status==='failed'))process.exitCode=1
