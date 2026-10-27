@@ -167,7 +167,7 @@ endif()
 
 # Isolate SDK typedefs and macros from original numerical names (UINT8, near).
 if(WIN32)
-  foreach(target jip-engine jip-engine-shared jip-engine-repro jip-engine-repro-static jip-sampling-test jip-resampler-test)
+  foreach(target jip-engine jip-engine-shared jip-engine-repro jip-engine-repro-static jip-sampling-test jip-resampler-test jip-resampler-benchmark)
     if(TARGET ${target})
       target_sources(${target} PRIVATE engine_windows_io.c)
     endif()

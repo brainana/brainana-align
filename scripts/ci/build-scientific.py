@@ -107,9 +107,12 @@ finally:
 # Recover the checked upstream ITK source, never fetch unpinned source at build time.
 pin=json.loads((SCI/'native-itk/UPSTREAM.json').read_text());archive=SCI/'native-itk/vendor'/pin['archive']
 if hashlib.sha256(archive.read_bytes()).hexdigest()!=pin['sha256']:raise RuntimeError('ITK source checksum mismatch')
-extract=BUILD/'itk-source';extract.mkdir(exist_ok=True);itksrc=extract/'InsightToolkit-5.4.6'
+extract=BUILD/'itk-source';extract.mkdir(exist_ok=True)
+# ITK explicitly rejects Windows source roots longer than 50 characters.
+itksrc=BUILD/'s' if SYSTEM=='Windows' else extract/'InsightToolkit-5.4.6'
 if not itksrc.exists():
     with tarfile.open(archive) as stream:stream.extractall(extract,filter='data')
+    if SYSTEM=='Windows':(extract/'InsightToolkit-5.4.6').rename(itksrc)
 itk=BUILD/'itk';configure(itksrc,itk,['-DBUILD_SHARED_LIBS=OFF','-DBUILD_TESTING=OFF','-DITK_BUILD_DEFAULT_MODULES=OFF',*['-DITKGroup_'+g+'=OFF' for g in ['Core','Filtering','IO','Numerics','Registration']], '-DModule_ITKRegistrationMethodsv4=ON','-DModule_ITKBiasCorrection=ON','-DModule_ITKThresholding=ON','-DITK_USE_SYSTEM_EXPAT=OFF','-DITK_USE_SYSTEM_ZLIB=OFF','-DITK_USE_SYSTEM_PNG=OFF'])
 build(itk)
 adapter=BUILD/'itk-adapter';configure(SCI/'native-itk',adapter,['-DITK_DIR='+str(itk)]);build(adapter)
