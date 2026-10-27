@@ -14,3 +14,6 @@
 scientific/native/source/** -text
 scientific/native-itk/vendor/** -text
 scientific/native-itk/licenses/** -text
+
+# Native golden fixtures include hashed text; Windows checkout must preserve bytes.
+scientific/native/tests/fixtures/** -text

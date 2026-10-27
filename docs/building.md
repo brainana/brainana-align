@@ -139,3 +139,10 @@ image difference 1.5259e-5, and old-checkpoint continued-field difference below
 2.97e-5 mm. No optimizer, resampler or numerical compiler flags were changed.
 Any larger difference still fails the release. Diagnostic artifacts contain only
 synthetic test data and preserve failure evidence for inspection.
+
+Windows native exports create temporary files with `_open` and `_O_EXCL`, then
+commit them with `MoveFileEx(..., REPLACE_EXISTING | WRITE_THROUGH)`. MSVCRT does
+not support `fopen(...,"wbx")`, and C `rename` cannot replace an existing Windows
+file. Preserve exclusive creation and never delete the committed destination
+before replacement. This changes I/O only. Golden fixture files use `-text` in
+`.gitattributes` so Windows CRLF checkout cannot alter their checksums.
