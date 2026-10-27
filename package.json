@@ -1,7 +1,7 @@
 {
   "name": "brainana-align",
   "private": true,
-  "version": "0.17.10",
+  "version": "0.18.0",
   "type": "module",
   "description": "Brainana Align standalone registration application",
   "author": "Brainana",
@@ -138,7 +138,14 @@
   "overrides": {
     "sprintf-js": "^1.1.4"
   },
-  "homepage": "https://github.com/brainana",
+  "homepage": "https://github.com/brainana/brainana-align",
   "desktopName": "brainana-align.desktop",
-  "license": "AGPL-3.0-only"
+  "license": "AGPL-3.0-only",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/brainana/brainana-align.git"
+  },
+  "bugs": {
+    "url": "https://github.com/brainana/brainana-align/issues"
+  }
 }

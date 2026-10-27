@@ -1,3 +1,7 @@
+# 0.18.0 · public source and native GitHub releases · 2026-10-27
+
+Migrated the existing repository to the current standalone Align source organization and gated native GitHub builds for macOS Apple Silicon/Intel, Windows x64 and Linux x64. Retained the repository history and original BSD notice. Application/registration functionality matches the prepared0.17.10 baseline; version/bundle identity advances the older repository's separate0.17.26-workflow-ui.1 sequence. Complete source, licenses, tests, validation, manifests and checksums accompany successful releases. Native platforms are qualified by their actual CI jobs; configuration alone is not a platform pass.
+
 # 0.17.10 · pure-image flip inspection · 2026-10-27
 
 - Added Alignment display → Image comparison: Smooth opacity or Flip between images, with manual switching and optional one-second automatic flipping.

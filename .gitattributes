@@ -1,0 +1,16 @@
+* text=auto
+*.sh text eol=lf
+*.py text eol=lf
+*.mjs text eol=lf
+*.cjs text eol=lf
+*.yml text eol=lf
+*.nsh text eol=crlf
+*.gz binary
+*.zip binary
+*.woff2 binary
+*.nii binary
+
+# Preserve reviewed third-party/source bytes and license provenance.
+scientific/native/source/** -text
+scientific/native-itk/vendor/** -text
+scientific/native-itk/licenses/** -text

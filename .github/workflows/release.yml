@@ -1,0 +1,125 @@
+name: Build and release installers
+on:
+  push:
+    tags: ['v*']
+  release:
+    types: [published]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  package:
+    name: Package ${{ matrix.target }}
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: macos-arm64
+            os: macos-15
+            args: --mac --arm64
+          - target: macos-x64
+            os: macos-15-intel
+            args: --mac --x64
+          - target: windows-x64
+            os: windows-2022
+            args: --win --x64
+          - target: linux-x64
+            os: ubuntu-22.04
+            args: --linux --x64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Match tag to committed application version
+        run: node scripts/ci/check-tag.mjs
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name || github.ref_name }}
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Linux Electron/AppImage build prerequisites
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y build-essential libgtk-3-0 libnss3 libgbm1 libasound2 libxss1 libfuse2 rpm
+      - run: npm ci
+      - run: npm run build
+      - run: npm run ci:test
+      - uses: ./.github/actions/build-native
+      - run: npm run ci:test -- --native-only
+      - name: Prepare app-owned runtime and release configuration
+        run: npm run desktop:prepare && npm run ci:config
+      - name: Build native installers without publishing partial results
+        run: npx electron-builder --config generated/github-builder.yml ${{ matrix.args }} --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      - run: npm run ci:verify-package
+      - run: python scripts/ci/collect-assets.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: installers-${{ matrix.target }}
+          path: artifacts/installers/
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: validation-${{ matrix.target }}
+          path: |
+            artifacts/validation/
+            generated/scientific-build.json
+            scientific/runtime-validation.json
+  browsers:
+    uses: ./.github/workflows/browser.yml
+  aggregate:
+    needs: [package, browsers]
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: installers-*
+          path: release-output/
+          merge-multiple: true
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: validation-*
+          path: release-output/Validation/
+      - run: python scripts/ci/assemble-release.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: complete-release
+          path: release-output/
+          if-no-files-found: error
+  publish:
+    needs: aggregate
+    if: github.event_name != 'workflow_dispatch'
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v4
+        with:
+          name: complete-release
+          path: release-output/
+      - name: Upload only after every required platform passes
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.event.release.tag_name || github.ref_name }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          if ! gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release create "$RELEASE_TAG" --draft --title "Brainana Align ${RELEASE_TAG}" --notes "Validated platform installers, complete source, validation and SHA-256 checksums."
+          fi
+          gh release upload "$RELEASE_TAG" release-output/*.{dmg,exe,deb,AppImage,zip,json,txt} --clobber

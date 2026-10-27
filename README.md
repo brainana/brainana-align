@@ -74,6 +74,8 @@ These commands build and test the frontend/core. For the full embedded numerical
 engine, run the native build procedure before `npm run dev:desktop`. On Windows,
 use the documented MSYS2 MINGW64 toolchain; MSVC is not a supported engine toolchain.
 
+The older repository snapshot is retained in Git history; its BSD notice is preserved in `licenses/Brainana-Align-original-BSD-3-Clause.txt`.
+
 ## License and acknowledgements
 
 Align is **AGPL-3.0-only**; see [LICENSE](LICENSE) and [NOTICE.txt](NOTICE.txt).

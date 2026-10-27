@@ -1,0 +1,45 @@
+# Dependencies and generated application/installer assets
+node_modules/
+generated/
+apps/*/dist/
+apps/*/release/
+release-output/
+.ci-build/
+.ci-venv/
+validation-results/
+artifacts/
+# Scientific build products; pinned vendor SOURCE archives remain tracked
+scientific/.*build*/
+scientific/.freeze*/
+scientific/.itk-*/
+scientific/.native-*/
+scientific/.fftw-*/
+scientific/native/validation/
+scientific/*validation*.json
+scientific/*audit*.json
+scientific/native/*.dylib
+scientific/native/*.dll
+scientific/native/*.so*
+*.o
+*.obj
+*.a
+*.lib
+*.pdb
+__pycache__/
+*.py[cod]
+# Local data/settings/credentials are never repository content
+.env
+.env.*
+!.env.example
+.brainana-*/
+.DS_Store
+.vscode/
+.idea/
+*.log
+/browser-engine-results.json
+/RELEASE_CONTENTS.txt
+/SHA256SUMS.txt
+*.dSYM/
+scientific/native/licenses/WindowsToolchain/
+scientific/native/source/**/*.la
+scientific/native/source/**/*.pc

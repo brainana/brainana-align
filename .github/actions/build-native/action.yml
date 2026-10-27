@@ -1,0 +1,39 @@
+name: Build embedded registration worker
+description: Compile, freeze and qualify the app-owned scientific runtime for this native runner
+inputs:
+  jobs:
+    default: '4'
+    description: Maximum simultaneous compiler processes
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@v6
+      with:
+        python-version: '3.12'
+        cache: pip
+        cache-dependency-path: |
+          scientific/requirements.txt
+          scripts/ci/requirements.txt
+    - uses: msys2/setup-msys2@v2
+      if: runner.os == 'Windows'
+      id: msys
+      with:
+        msystem: MINGW64
+        update: false
+        install: >-
+          mingw-w64-x86_64-gcc
+          make
+          diffutils
+          patch
+    - name: Install pinned Python and build dependencies
+      shell: bash
+      run: python -m pip install -r scientific/requirements.txt -r scripts/ci/requirements.txt
+    - name: Record independent-reader Python path
+      shell: bash
+      run: python -c "import os,sys;open(os.environ['GITHUB_ENV'],'a',encoding='utf8').write('BRAINANA_SIMPLEITK_PYTHON='+sys.executable+'\n')"
+    - name: Build and test native libraries and complete frozen worker
+      shell: bash
+      env:
+        ALIGN_MSYS_ROOT: ${{ steps.msys.outputs.msys2-location }}
+        ALIGN_MINGW_ROOT: ${{ steps.msys.outputs.msys2-location }}/mingw64
+      run: python scripts/ci/build-scientific.py --jobs '${{ inputs.jobs }}'
