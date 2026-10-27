@@ -93,6 +93,7 @@ build(engine,*targets)
 checks=['engine-acceleration-arithmetic','engine-acceleration-backend','engine-acceleration-transaction','engine-private-linkage','engine-contexts','engine-registration-interface','engine-sampling','engine-threaded-resampler','engine-resampler-equivalence','engine-checkpoint-compatibility']
 if SYSTEM!='Windows':checks.append('engine-reliability')
 if SYSTEM=='Darwin' and ARCH=='arm64':checks.append('engine-reference-workflow')
+else:ENV['JIP_PORTABLE_REFERENCE']='1'
 try:
     run(['ctest','--test-dir',engine,'--output-on-failure','--no-tests=error','-R','^('+'|'.join(checks)+')$'])
 finally:

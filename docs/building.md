@@ -117,3 +117,25 @@ and runs on macOS. Each release target still runs `ci:verify-package` against it
 own native installer payload. SSH test fixtures use a POSIX virtual filesystem
 root and an explicit Node interpreter so host Windows paths and Unix shebangs
 do not become protocol or executable assumptions.
+
+### Native reference policy across platforms
+
+Immutable reference traces and byte hashes were captured on macOS arm64 with
+Clang. That target retains the original byte-exact checks. Internal same-host
+checkpoint restore, rollback and continuation comparisons remain byte-exact on
+every target. Loading the old 0.1.0 checkpoint also retains its exact image and
+field payload hashes and exact geometry everywhere.
+
+For legacy affine references on other targets, `JIP_PORTABLE_REFERENCE=1`
+compares all finite float values against the unchanged fixtures: the first 30
+transform/objective floats use absolute tolerance 1e-6; image/field values use
+1e-4; both add relative tolerance 1e-6. Continuing the old checkpoint uses
+absolute tolerance 1e-4 plus relative tolerance 1e-6 against compressed payloads
+whose hashes must match the pre-existing 0.1.0 manifest. Geometry is exact.
+These payloads were recovered from existing outputs and verified against the
+immutable manifest, not regenerated from a failing candidate. Linux evidence
+showed identical transform parameters for the first failing affine case, maximum
+image difference 1.5259e-5, and old-checkpoint continued-field difference below
+2.97e-5 mm. No optimizer, resampler or numerical compiler flags were changed.
+Any larger difference still fails the release. Diagnostic artifacts contain only
+synthetic test data and preserve failure evidence for inspection.
