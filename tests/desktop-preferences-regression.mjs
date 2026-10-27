@@ -19,7 +19,7 @@ try{
  await assert.rejects(read({sender:webContents,senderFrame:{}},'preferences'),/Untrusted/)
  await assert.rejects(write(event,'../../outside',{value:1}),/Unknown/)
  await assert.rejects(write(event,'preferences',{data:'x'.repeat(2000001)}),/too large/);await assert.rejects(write(event,'preferences',{data:'😀'.repeat(600000)}),/too large/)
- await Promise.all([write(event,'preferences',{theme:'light'}),write(event,'preferences',{theme:'dark'})]);assert.equal((await read(event,'preferences')).theme,'dark');assert.equal((await fs.stat(path.join(folder,'align-preferences.json'))).mode&0o777,0o600)
+ await Promise.all([write(event,'preferences',{theme:'light'}),write(event,'preferences',{theme:'dark'})]);assert.equal((await read(event,'preferences')).theme,'dark');if(process.platform!=='win32')assert.equal((await fs.stat(path.join(folder,'align-preferences.json'))).mode&0o777,0o600)
  await write(event,'window',null);assert.equal(win.preferenceWindowReset,true)
  assert.equal(await handlers.get('align-preferences-export-folder')(event),folder);assert.equal((await read(event,'export')).folder,folder)
  source.namespace.installPreferenceStorage({directory:folder,window:()=>win});assert.equal((await handlers.get('align-preferences-read')(event,'preferences')).theme,'dark','restart uses same user-data storage')
