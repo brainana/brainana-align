@@ -149,6 +149,12 @@ if not A.skip_freeze:
     shutil.rmtree(ROOT/'generated/scientific-runtime',ignore_errors=True)
     run([sys.executable,'-m','PyInstaller','--clean','--noconfirm','--distpath',ROOT/'generated','--workpath',BUILD/'freeze',SCI/'Align-Registration.spec'])
     run([sys.executable,SCI/'tests/validate_runtime.py'])
+    runtime=ROOT/'generated/scientific-runtime'
+    files=[p for p in runtime.rglob('*') if p.is_file() and not p.is_symlink()]
+    size_report={'platform':SYSTEM,'architecture':ARCH,'bytes':sum(p.stat().st_size for p in files),'limit':90_000_000,'largest':sorted([{'path':str(p.relative_to(runtime)),'bytes':p.stat().st_size} for p in files],key=lambda v:v['bytes'],reverse=True)[:15]}
+    report=ROOT/'artifacts/validation';report.mkdir(parents=True,exist_ok=True)
+    (report/'scientific-size.json').write_text(json.dumps(size_report,indent=2)+'\n')
+    if size_report['bytes']>size_report['limit']:raise RuntimeError('Frozen scientific runtime exceeds90MB: '+str(size_report['bytes'])+'; see scientific-size.json')
 plan['nativeTests']=checks;plan['limitations']=['Windows POSIX file-descriptor fault-injection test is not compiled; source/frozen registration and rollback checks still run.','Full native GUI/GPU pixel validation is separate.']
 (ROOT/'generated').mkdir(exist_ok=True)
 (ROOT/'generated/scientific-build.json').write_text(json.dumps(plan,indent=2)+'\n')
