@@ -1,0 +1,36 @@
+Like xdisplay, functions often depend upon cursor placement.
+These are the cursor locations:
+1) on top of alignment parameters for manually adjusting parameters
+2) on image window
+3) on text fields above the image window
+
+______________________________________
+  ALIGNMENT COMMANDS ON IMAGE WINDOW
+______________________________________
+spacebar   toggle between individual and template;
+	   alternatively, toggle field above window
+tab	   toggle between alignment values and increments
+up/down    change the parameter selection
+left/right increase or decrease value of selected parameter
+control-a  adjust currently selected parameter (1D)
+a or A     automatically adjust parameters in 3D, 6D, 9D, or 12D;
+	   use mutual information (best) or variance;
+	   cost functions are based upon currently shown images
+	   (e.g., when more than 1 time point is included in files)
++= or -_   move through time dimension of individual & template;
+
+______________________________________
+  GENERAL COMMANDS ON IMAGE WINDOW
+______________________________________
+a	  automatically adjust alignment using current parameters
+A	  automatically adjust alignment using 3,6,12  parameters
+h         help
+o         toggle wire frame on/off
+control-o page through colors for wire frames
+q         quit, saving data to align.com
+s	  save alignment parameters to align.com, but don't quit
+w         window the grayscale settings using current overlay;
+	  individual and template images have separate settings
+z         decrease the "zoom" setting (size of image window)
+Z         increase the zoom setting
+3	  toggle between mosaic mode and tri-plane mode

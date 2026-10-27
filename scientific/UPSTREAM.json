@@ -1,0 +1,18 @@
+{
+  "origin": "JIP scientific source 0.8.4",
+  "native_engine": "Original CPU/Metal/CUDA numerical implementation preserved",
+  "python_source_sha256": {
+    "engine": "4887d29035f9bd58b531fcf5e819e173029e0a3eb01c2139b09c168d8709ac43",
+    "images": "a787e613dec00134b989e8202f3f8dbb5e911124a941d690cbeb27357cb7030a",
+    "sampling": "26eabf0e2ea3d95f87bddeab7abfc2ff458832d3a8485bd7a62517ef4c7aab11",
+    "itk_registration": "39b586f3c6cc81137c5ddbfa9b6013357290a2ea3a9534976ef9d2e40b0bc2ed",
+    "align_bridge": "80f4961f4a8dd3b28a6918d7a6b822c0e3d1c1feb0167baf8450ee08f8b9a5cf"
+  },
+  "license": "Native/original component licenses retained under native/licenses and native/source; scientific Python provenance retained here",
+  "integration": "Only numerical registration helpers included; no jip_workbench GUI/workspace or Qt",
+  "adaptation": "Retain exact needed coordinate/settings/diagnostic functions; remove standalone jobs, sessions, GUI and unused SciPy preprocessing. Private launch/atomic I/O and packaged path handling are owned by Align.",
+  "native_library_sha256": {
+    "libjip-engine.dylib": "deca53e081cefbe0e4e1f1ea53ed9d1c34ea6f726bd29fa916412f8c4983bea6",
+    "libjip-engine-repro.dylib": "be6a86a29c9ccdb184438aff02e4a143697289707895599e0382a07ce0800c5d"
+  }
+}

@@ -1,0 +1,10 @@
+To facilitate compilation, I have created a directory this directory.
+On this directory, try using "build-all.tcsh". As the extension indicates,
+scripts in this directory using the tcsh shell. If you are using another shell
+like bash, you will need to switch to tcsh to execute these scripts:
+unix% tcsh
+unix% source build-all.tcsh
+
+Note that the environment variable $JIP_HOME is used throughout these scripts.
+Make sure that this variable points to the home jip directory one level up
+from this directory. If not, edit ../define-jip.tcsh and modify the value.

@@ -1,0 +1,254 @@
+!8 0 nothing special
+You have selected "nothing special."  Try again?
+
+!194 0
+This is the image mosaic window.
+To change the number of slices shown, click on the pound sign above the image window on the right.
+To change the number of rows & columns, select the field just to the right of the "mosaic:" field
+on the top right.
+To switch to 3-plane mode, select the "mosaic:" field.
+To flip the image up-down, add or remove a "-y" option on startup.
+
+!2240 0 nothing special (mosaic window)
+You may have tried to select the mosaic window, but you picked a border between
+mosaic images.
+
+!130 0
+This is x-y plane in orthogonal 3-plane mode.
+To switch to mosaic mode, select the "3-plane:" field on the top right.
+To flip the image up-down, add or remove a "-y" option on startup.
+
+!258 0
+This is y-z plane in orthogonal 3-plane mode.
+To switch to mosaic mode, select the "3-plane:" field on the top right.
+To flip the image up-down, add or remove a "-y" option on startup.
+To show a rotated version of this image, select the "Y vs Z" field on the top right.
+To make "Z versus Y" the default, use "-Y" on startup.
+
+!2312 0
+nothing special (3-plane data window, no panel)
+
+!3080 0
+nothing special (3-plane data window, no panel)
+
+!514 0
+This is x-z plane in orthogonal 3-plane mode.
+To switch to mosaic mode, select the "3-plane:" field on the top right.
+To flip the image up-down, add or remove a "-y" option on startup.
+
+!520 0
+nothing special (3-plane data window)
+
+!1026 0
+This is z-y plane in orthogonal 3-plane mode.
+To switch to mosaic mode, select the "3-plane:" field on the top right.
+To flip the image up-down, add or remove a "-y" option on startup.
+To show a rotated version of this image, select the "Z vs Y" field on the top right.
+
+!4112 0
+__________________ COLOR BAR ____________________________________
+The colorbar depicts activation overlays using either a linear
+scale ("-a" option from command line) or a log-10 scale ("-p"
+from command line). Note that all linear maps are subject to an
+implicit filter from the preceding log-10 map, under the assumption
+that the log-10 map represents p values and the following linear
+map shows an index like percent signal change.
+OPTIONS:
+-  When more than 1 activation map is loaded, use the +/- keys
+   to page through different activation maps.
+-  To change the lower/upper limit of the colorbar, position the
+   cursor near the lower/upper range and use the up/down arrows.
+-  To set the lower/upper range, click near the lower/upper limit
+   using the L BUTTON.
+-  To expand the lower/upper range, click near the lower/upper limit
+   using the R BUTTON.
+-  To select just one tail of the distribution, click on either
+   the "+" or "-" fields above the colorbar using the L BUTTON.
+-  To switch the +/- color fields, click on these fields using
+   the R button. This is sometimes useful to account for a sign
+   change in the map; e.g., "+ activation" procudes "-" signal
+   changes using MION.
+-  To toggle through +/- colorbars with different color maps, use
+   the left/right arrows with the cursor on the colorbar.
+_________________________________________________________________
+
+!4 1 Selectable-text overlay/wire lists
+This option is enabled when lists of predefined overlays or wire frames have been
+loaded during startup. If both lists of both overlays and wire frames have been
+loaded, selection of this field (L or R button) will toggle between the overlay
+and wire frame lists.
+
+!4 2 Selectable-text overlay/wire
+This option is enabled when lists of predefined overlays or wire frames have been
+loaded during startup. The L and R buttons will move through overlay or wire frame
+list in the forward and backward directions, respectively. Up/down arrow keys
+act exactly like L/R buttons. The left/right arrow keys will add overlays or
+wire frames to the image without deleting existing ones.
+
+!4 3 Selectable-text data type
+When complex data is loaded, this field allows the selection of magnitude, phase,
+real, or imaginary data display. The L/R buttons (or arrows) move one forward/backward
+through the 4 display options.
+
+!4 4 Selectable-text mosaic/3-plane
+Selection of this option toggles between mosaic and tri-planar display modes.
+Alternatively, use keyboard "3" to toggle between display modes.
+
+!4 5 Selectable-text mosaic panels OR Y-Z/Z-Y field
+In mosaic display ...
+   This option changes the number of row and columns in the mosaic display while keeping
+   the number of slices constant. The L button increases columns (and decreases rows),
+   while the R button decreases columns.
+In the 3-plane display mode ...
+   This option changes between Y-Z and Z-Y display orientations. "Y vs Z" is useful
+   for displaying aligned rodent brains, whereas "Z versus Y" is useful for displaying
+   aligned primate brains. Differences between rodents and primates result from different
+   orientations in the scanner and different stereotaxic conventions in atlases.
+
+!4 6 Selectable-text tailbar +
+Click on the "+" above the color bar with the L button to choose only the positive
+tail of the map. Use the R button to switch +/- tails.  Use the left/right arrows to
+change the color map scheme.
+
+!4 7 Selectable-text tailbar -
+Click on the "-" above the color bar with the L button to choose only the negative
+tail of the map. Use the R button to switch +/- tails.  Use the left/right arrows to
+change the color map scheme.
+
+!4 8 Selectable-text N
+This option generates new wire frames (to draw a square overlay, click the R mouse button
+and drag down and to the right).  When an activation map is present, use of the L button
+will create an overlay from a activation island, and the R button will prompt for a wire frame.
+  A wire frame is useful in two ways: 1) to visualize regions of interest without covering
+them by an overlay, and 2) to generate overlays of arbitrary shape.
+  Wire frames are drawn using Bezier curves. Every 4 points defines a smooth curve, so the
+first wire segment does not appear until after 4 points are marked (L mouse button).
+Subsequently, only 3 points are needed, since the 4th point ends the previous segment.
+When a wire segment is nearly completed, you can choose to end it or close it; the latter
+option connects to the first point of the first segment and additionally generates an
+overlay by filling the closed wire frame.
+*** Currently, wire frames can only be drawn on the x-y plane (mosaic or 3-plane mode). ***
+
+!4 9 Selectable-text r/R
+This option reads an overlay (r) or wire frame (R) from files .ovl or .wire,
+respectively.  Use the L button for overlays and the R button for wire frames.
+Overlays are based upon voxel indices, whereas wire frames are based upon spatial
+coordinates. Wire frames can be used across resolution scales, whereas overlays
+are fixed to a specific grid.
+  The format of overlay files consists of either 3 or 4 entries per line in an
+ASCII file, with the first 3 entries indicating the (i j k) voxel indices
+corresponding to the (x y z) axes. The 4th entry, if present, is the voxel weight
+and should be between 0 and 1. In all ROI calculations, weighted summations are
+performed across the overlay.
+  A wire frame file is an ASCII-formatted table of Bezier control points, with each
+listing an (x,y,z) coordinate position followed by a "1" (pen down) or "0" (pen up),
+with the latter indicating the end of a wire frame.
+
+!4 10 Selectable-text w/W
+This option writes an overlay (w) or wire frame (R) into files .ovl or .wire,
+respectively.  Use the L button for overlays and the R button for wire frames.
+The format of the .ovl or .wire files is obvious from inspection, but see help
+for the "r/R" options for information about file formats.
+
+!4 11 Selectable-text d/D
+This option deletes an overlay (d) or wire frame (D), respectively.
+Use the L button for overlays and the R button for wire frames.
+
+!4 12 Selectable-text c/C
+This option changes the color of an overay (c) or wire frame (C), respectively.
+Use the L button for overlays and the R button for wire frames. This can be
+useful when an overlay or wire frame falls on top of activation of similar color.
+
+!4 13 Selectable-text m/M
+This option mirrors an overlay(m) or wire frame (M) in the x dimension. This
+is useful for right-left centered images, as encountered in stereotaxic atlases
+based upon histology or in registered MRI spaces that are centered left-right.
+
+!4 14 Selectable-text f/F
+This option fills all closed wire frames on the display, turning them into a region
+of interest. Wire frames provide a means to span different resolutions, so they can
+be drawn at high resolution (e.g., histology or atlas) and transfered to MRI resolution.
+Alternatively, high-resolution overlays can be down-sampled using jip into stored
+overlays at the resolution of interest.
+
+!4 15 Selectable-text s/S
+Using this section, region-of-interest data for a single time point (s, L button) or
+all time points (S, R button) goes to the shell window. The output consists of the
+number of voxels in the overlay, the average signal value, and the standard devation
+of the signal across the overlay.
+
+!4 16 Selectable-text T
+This options toggles the transparency setting of overlays. In the default mode, the overlay
+is opague. Alternatively, the transparency of the overlay can be made to be dependent upon the underlying
+grayscale image for visualization of anatomy under the overlay.
+
+!4 17 Selectable-text i
+This selection automatically sets the contrast/brightness levels of the image display.
+If an overlay is present on the volume, then only voxels within the overlay are
+used in the calculation; otherwise, all voxels in the active volume are used.
+There is only 1 setting of contrast/brightness for all loaded volumes.
+An alternative method for setting contrast/brightness is to drag across the image
+window with the L button depressed: left/right changes contrast, while up/down
+changes brightness. Yet another way to do this is to place the cursor on an
+"unused" portion of the display window and use L/R/U/D arrows.
+
+!4 18 Selectable-text z
+This option either decreases (L button, or "z") or increase (R button, or "Z") the zoom
+factor the display window.
+
+!4 19 Selectable-text +
+This option toggles between 3 possible displays of the crosshairs: line, pixelated,
+and none. Narrow line crosshairs are useful because they minimize the amount of
+occluded image. Pixelated crosshairs show the full extent of the region corresponding
+to the crosshair, accounting both for differences in resolution and for image
+interpolation. When crosshairs are completely removed from the image, time graphs
+will be updated for every movement of the cursor, rather than for movement of the
+crosshair. Also, arrows move overlays when the cursor is removed from the display.
+
+!4 20 Selectable-text I
+Selection of this field, or using the TAB key, toggles between the default display
+or interpolation of the image (including activation, crosshair, overlays) across the
+zoom factor.
+
+!4 21 Selectable-text g
+This option brings up the graph window. There are 4 current graph types:
+3 projections (x,y,z) through the data, and a time graph including a GLM model.
+
+!4 22 Selectable-text h/H
+This selection provides help in either short form (h, L button) or long form
+(H, R button). This help is very general. For questions about specific functions,
+use the "?" key or text button.
+
+!4 23 Selectable-text q
+This selection, or simply "q" from the keyboard, quits the program.
+
+!4 24 Selectable-text ?
+This feature provides the most detailed help about text buttons or regions of
+the window. First click on the "?" text button or enter "?" from the keyboard,
+and then click on a different text button or some regions of the window
+(e.g., colorbar, image, ...).
+
+!4 25 Selectable-text #
+This option enables one to change the number of panels in the mosaic display.
+A prompt provides two options:
+ 1) Input a number of panels and then hit RETURN, and the mosaic will then display
+    that number of panels filled by contiguous slices. One can shift the position
+    of the slices shown in the mosaic by using the < or > keys, or the mouse scroll wheel.
+ 2) Select slices shown in the full mosaic using the L mouse button, and then hit RETURN
+    when done.  Slice will be shown as selected; they do not need to be contiguous.
+
+!4 26 Selectable-text orientation
+This text button enables display of different slice orientations using a mosaic format.
+The slice orientations are those shown in tri-planar mode: X-Y, X-Z, and either Y-Z or Z-Y.
+Use the LEFT or RIGHT mouse buttons to select different orientations.
+
+!4 27 Selectable-text l/L.
+This option toggles (on/off) the display of position labels (l) or ticks (L)
+on each image plane. The display of position labels (millimeters) can be a useful
+guide for aligned data.
+
+!4 28 Selectable-text activation range.
+Selectable text to change the color scale or gray scale.
+Alternatively, use arrows or mouse clicks on the scale to change ranges.
+For gray scale window and level, you can change window levels also by clicking
+and holding the LEFT button while you drag up-down or left-right.

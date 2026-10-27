@@ -1,0 +1,22 @@
+import {splineDiagnostics,createPointMapping} from '../../../packages/imaging-math/nonlinearSpline'
+import type { FitState } from './appTypes'
+import { diagnoseTransform, LANDMARK_MODELS } from './landmarkFit'
+import {landmarkSensitivityHtml} from './landmarkQuality'
+
+const escapeHtml = (s: string) => s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!))
+export function fitSummaryHtml(fit: FitState): string {
+  const d = diagnoseTransform(fit.matrix)
+  if(fit.nonlinear?.kernel==='jip-dense-pull'){const s=fit.nonlinear;return `<strong>${s.settings.engine==='itk'?'ITK':'JIP'} image-based nonlinear registration</strong><br>Deformation axes: ${escapeHtml(String(s.settings.axes??'xyz'))}<br>Field grid: ${s.dims.join(' × ')}<br>Backend: ${escapeHtml(String(s.execution.active??'CPU'))}${s.execution.reason?`<br>Execution note: ${escapeHtml(String(s.execution.reason))}`:''}<br>Full RAS pull field retained; the affine alone is not this registration.${s.warnings.map(w=>`<div class="transform-warning">${escapeHtml(w)}</div>`).join('')}`}
+
+  if(fit.nonlinear){const mapper=createPointMapping(fit.matrix,fit.nonlinear),rows=fit.landmarkSnapshot.filter(l=>l.enabled&&l.mri&&l.ct).map(l=>{const source=fit.direction==='ct-mri'?l.ct!:l.mri!,target=fit.direction==='ct-mri'?l.mri!:l.ct!,mapped=mapper.forward(source);return `<li>Pair ${l.id}: ${Math.hypot(...mapped.map((v,a)=>v-target[a])).toFixed(3)} mm</li>`}).join('');const s=fit.nonlinear,g=splineDiagnostics(s,fit.matrix),pairs=fit.landmarkSnapshot.filter(l=>l.enabled&&l.mri&&l.ct).length;return `<strong>Nonlinear 3D spline · ${pairs} control pairs</strong><br>Training RMS error: ${fit.rms.toFixed(3)} mm<br>Smoothing: ${s.smoothing}<br>Affine component determinant: ${d.determinant.toPrecision(5)}<br>Sampled local Jacobian estimates: ${g.minimumSampledJacobian.toFixed(4)}–${g.maximumSampledJacobian.toFixed(4)}<br>Jacobian lower bound away from control knots: ${g.globalJacobianLowerBound.toPrecision(4)}<br>Deformation gradient bound: ${g.lipschitzBound.toFixed(4)} (limit 0.65)<br>Maximum control-point adjustment: ${g.maxLandmarkDisplacementMm.toFixed(3)} mm<br>Reflection: No<br>Full mapping is nonlinear; the affine component alone is not the registration.${fit.landmarksChanged?'<br>Current landmarks differ from the fitted snapshot.':''}<p>Training landmark error is not independent validation or an estimate of target accuracy.</p><details><summary>Per-landmark residuals</summary><ol>${rows}</ol></details>${landmarkSensitivityHtml(fit)}${[...new Set([...s.warnings,...(fit.diagnostics?.warnings??[]),...d.warnings])].map(w=>`<div class="transform-warning">${escapeHtml(w)}</div>`).join('')}`} 
+  const warnings = [...new Set([...(fit.diagnostics?.warnings ?? []), ...d.warnings])]
+  const automaticLabel=LANDMARK_MODELS[['spline','jip'].includes(fit.model??'')?'affine':(fit.model??'rigid') as keyof typeof LANDMARK_MODELS].label
+  const pairs = fit.landmarkSnapshot.filter(l => l.enabled && l.mri && l.ct).length
+  return `<strong>${fit.initializationSource==='automatic'?'Automatic '+automaticLabel:fit.initializationSource==='image-geometry'?'Image geometry starting alignment':LANDMARK_MODELS[['spline','jip'].includes(fit.model??'')?'affine':(fit.model ?? 'rigid') as keyof typeof LANDMARK_MODELS].label}</strong><br>Training RMS error: ${pairs?fit.rms.toFixed(3)+' mm':'not available (no fitted landmark pairs)'} · ${pairs} pairs<br>Determinant: ${d.determinant.toPrecision(5)}<br>Scale X/Y/Z: ${d.scales.map(v => v.toFixed(4)).join(' / ')}<br>Shear magnitude: ${d.shear.toFixed(4)} · Reflection: ${d.reflection ? 'YES — mirrors anatomy' : 'No'}${fit.landmarksChanged ? '<br>Current landmarks differ from the accepted snapshot.' : ''}${pairs?'<p>Training landmark error is not independent validation or an estimate of target accuracy.</p>':''}${landmarkSensitivityHtml(fit)}${warnings.map(w => `<div class="transform-warning">${escapeHtml(w)}</div>`).join('')}`
+}
+export function confirmReflectedTransform(fit: FitState, action: string): boolean {
+  if (!diagnoseTransform(fit.matrix).reflection) return true
+  const ok = window.confirm(`This affine transform has a negative determinant and MIRRORS ANATOMY.\n\nVerify left–right labels and image coordinate conventions.\n\nExplicitly confirm that you want to ${action} this reflected transform.`)
+  if (ok) fit.reflectionConfirmed = true
+  return ok
+}

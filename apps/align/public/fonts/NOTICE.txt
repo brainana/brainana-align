@@ -1,0 +1,5 @@
+Source Sans 3: Copyright 2010–2020 Adobe. Reserved Font Name: Source.
+IBM Plex Mono: Copyright 2017 IBM Corp. Reserved Font Name: Plex.
+Unmodified font assets distributed under the SIL Open Font License 1.1; see OFL.txt alongside these files.
+Upstream: https://github.com/adobe-fonts/source-sans and https://github.com/IBM/plex
+Assets obtained from Brainana Viewer reference commit aaa47a989329f9b42c97a592ad0801b7d896216e.

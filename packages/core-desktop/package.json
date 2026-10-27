@@ -1,0 +1,9 @@
+{
+  "name": "@brainana/core-desktop",
+  "version": "0.18.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./*": "./*"
+  }
+}

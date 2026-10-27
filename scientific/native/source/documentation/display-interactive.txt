@@ -1,0 +1,111 @@
+For unix command line options, start with "xdisplay -h"
+Interactive options follow ...
+_________________________________________________
+   ARROWS: left/right, up/down, in/out
+_________________________________________________
+Arrows include the standard left/right and up/down arrows,
+plus in/out arrows defined to be '<' and '>' (with or without capitals).
+
+up/down arrows act according to context in this order:
+--------------
+1) with cursor on image with crosshairs/projection, move crosshairs/projection
+2) with cursor on image without crosshairs, move overlay if present
+3) with cursor on image without crossharis or overlay, adjust brightness
+4) with cursor on colorbar, change nearest threshold
+5) with cursor on selected text, toggle or page through options;
+   for overlays or wire frames, replace the current one
+
+left/right arrows
+-----------------
+1) with cursor on image with crosshairs/projection, move crosshairs/projection
+2) with cursor on image without crosshairs, move overlay if present
+3) with cursor on image without crossharis or overlay, adjust brightness
+4) with cursor on colorbar, toggle through activation tails (+/-)
+5) with cursor on selected text, toggle or page through options;
+   for overlays or wire frames, add the current set
+
+in/out arrows
+-----------------
+1) with cursor on image with crosshairs/projection, move crosshairs/projection
+2) with cursor on image without crosshairs, move overlay if present
+3) in a mosaic view with restricted slices (e.g., 3x2 window with 40 slices)
+   as obtained by 'control-z' or by starting the program with a restricted set,
+   shift images in z/slice direction within the mosaic format
+
+_________________________________________________
+   MOUSE BUTTONS: left, middle/right, wheel
+_________________________________________________
+
+mouse button 1 (left)
+---------------------
+1) if press and release occur at the same position on an image, move the
+   crosshairs if they are shown
+2) if press and release occur at different location, adjust either
+   brightness (up/down motion) or contrast (left/right motion)
+3) if a projection line is shown (x or y graph), move the projection line
+4) with cursor on colorbar, select nearest threshold
+5) with cursor above colorbar (+/- highlighted), change activation tail
+6) with cursor on selected text, toggle or page through options
+7) with cursor on graph, move selected point (time, x, or y)
+
+mouse button 2/3 (center/right)
+-------------------------------
+1) with cursor on image, draw overlay
+2) with cursor on colorbar, expand nearest threshold
+3) with cursor on selected text, toggle or page through options
+4) with cursor above colorbar (+/- highlighted), reverse color scale
+5) with cursor on graph, select region for GLM or other purpose
+
+mouse wheel
+-----------
+1) in 3-plane mode, move crosshairs through-plane (like ',' and '.')
+2) otherwise, act like up/down arrows according to the list above
+______________________________________
+     OTHER COMMANDS ON IMAGE WINDOW
+______________________________________
+3         switch between mosaic and tri-plane display mode
+a         toggle activation map on/off
+spacebar  toggle activation map on/off
+A         animate
+c         clear overlay
+C         clear wireframe
+control-c remove or re-display cross-hairs
+g	  display grid lines and slice positions for registered data (Paxinos)
+G	  write GLM files
+h         help
+control-i interpolate across zoom factor; equivalent to tab key
+o         read overlay from file .ovl and wire frame from file .wire
+O         write overlay to file .ovl and wire frame to file .wire
+control-o page through colors for overlay or wireframe
+P         calculate p value maps using current GLM settings
+q,Q       quit
+r         write ROI using current overlay
+R         write ROIs for all overlays in the pre-defined list
+s         show statistics for current overlay for all images
+S         show statistics for current overlay for current image
+control-t toggle overlay transparency setting on/off
+t         bring up a time graph
+w         window the grayscale settings using current overlay
+control-w draw a wire frame; closing the frame also creates an overlay
+x         brain up a graph for x projections
+y         brain up a graph for y projections
+z         decrease the "zoom" setting (size of image window)
+Z         increase the zoom setting
+control-z select a set of image panels to display (mosaic mode only)
++=        1) increase graph dimensions (time, x, or y)
+          2) with cursor on colorbar, page through activation maps
+-_        1) decrease graph dimensions (time, x, or y)
+          2) with cursor on colorbar, page through activation maps
+________________________________________
+     OTHER COMMANDS ON GRAPH WINDOW
+________________________________________
+b         remove baseline of GLM fit
+spacebar  remove GLM shaded regions
+e         increment event type setting
+f         on time graph, toggle GLM fit (square/gamma);
+          on x/y graphs, fit using a Gaussia
+G         write GLM files (GLM control file, timing files, ...)
+control-r remove multiple event types from the GLM fit,
+          specifying any combination of events
+u	  toggle between absolute and percentage units
+v	  make the y range of the graph variable, rather than fixed

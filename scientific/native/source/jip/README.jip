@@ -1,0 +1,52 @@
+This package is a command-oriented "scripting" tool for image data manipulation.
+
+----------------------------------------------------------------------------
+Compilation:
+----------------------------------------------------------------------------
+See if the executable for your machine type already exists. From Unix/Linux,
+find the machine OS and architecture:
+
+unix% uname -s
+Linux
+unix% uname -m
+x86_64
+
+IF THIS DIRECTORY EXISTS,
+cd Linux-x86_64    (or whatever)
+make
+cp jip ../../bin/Linux-x86_64
+
+IF THIS DIRECTORY DOES NOT EXIST,
+mkdir Linux-x86_64 (or whatever)
+cp Linx-i686/makefile Linux-x86_64
+cd Linux-x86_64
+make
+mkdir ../../bin/Linux-x86_64
+cp jip ../../bin/Linux-x86_64
+
+REQUIRED LIBRARIES
+1) jip-specific libraries:
+   Go to $JIP_HOME/lib and read the file README.jip
+2) NIFTI i/o library and znz library
+   Go to $JIP_HOME/nifticlib-1.1.0 and read the file README.jip
+3) Data compression library zlib (needed for znz libary)
+   Go to $JIP_HOME/zlib-1.2.3 and read the file README.jip
+4) FFTW (Fastest Fourier Transform in the West)
+   go to $JIP_HOME/fftw-3.2.2 and read the file README.jip
+5) Standard system libraries from /usr/lib
+
+----------------------------------------------------------------------------
+Execution:
+----------------------------------------------------------------------------
+alias xd $JIP_HOME/bin/jip   (where $JIP_HOME is the root directory)
+unix% jip file.com arg1 arg2 ...
+unix% jip
+jip > help
+
+----------------------------------------------------------------------------
+Documentation:
+----------------------------------------------------------------------------
+This (such as it is) resides on directory $JIP_HOME/documentation.
+Documentation is designed to be used from the programs.  E.g.,
+"help" from the jip command line reads the file "jip-menu.txt"
+on directory $JIP_HOME/documentation.

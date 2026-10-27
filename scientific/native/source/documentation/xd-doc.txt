@@ -1,0 +1,115 @@
+N
+This options generates new wire frames (to draw a square overlay, click the R mouse button
+and drag down and to the right).
+
+A wire frame is useful in two ways: 1) to visualize regions of interest without covering
+them by an overlay, and 2) to generate overlays of arbitrary shape.
+
+Wire frames are drawn using Bezier curves. Every 4 points defines a smooth curve, so the
+first wire segment does not appear until after 4 points are marked (L mouse button).
+Subsequently, only 3 points are needed, since the 4th point ends the previous segment.
+When a wire segment is nearly completed, you can choose to end it or close it; the latter
+option connects to the first point of the first segment and additionally generates an
+overlay by filling the closed wire frame.  Currently, wire frames can only be drawn on
+the x-y plane (any mosaic panel, or the upper left panel in 3-plane mode).
+
+r/R
+This option reads an overlay (r) or wire frame (R) from files .ovl or .wire,
+respectively.  Use the L button for overlays and the R button for wire frames.
+Overlays are based upon voxel indices, whereas wire frames are based upon spatial
+coordinates. Wire frames can be used across resolution scales, whereas overlays
+are fixed to a specific grid.
+
+The format of overlay files consists of either 3 or 4 entries per line in an
+ASCII file, with the first 3 entries indicating the (i j k) voxel indices
+corresponding to the (x y z) axes. The 4th entry, if present, is the voxel weight
+and should be between 0 and 1. In all ROI calculations, weighted summations are
+performed across the overlay.
+
+The format for a wire frame file ...
+
+
+w/W
+This option writes an overlay (w) or wire frame (R) into files .ovl or .wire,
+respectively.  Use the L button for overlays and the R button for wire frames.
+The format of the .ovl or .wire files is obvious from inspection, but see help
+for the "r/R" options for information about file formats.
+
+d/D
+This option deletes an overlay (d) or wire frame (D), respectively.
+Use the L button for overlays and the R button for wire frames.
+
+c/C
+This option changes the color of an overay (c) or wire frame (C), respectively.
+Use the L button for overlays and the R button for wire frames. This can be
+useful when an overlay or wire frame falls on top of activation of similar color.
+
+m/M
+This option mirrors an overlay(m) or wire frame (M) in the x dimension. This
+is useful for right-left centered images, as encountered in stereotaxic atlases
+based upon histology or in registered MRI spaces that are centered left-right.
+
++
+This option toggles between 3 possible displays of the crosshairs: line, pixelated,
+and none. Narrow line crosshairs are useful because they minimize the amount of
+occluded image. Pixelated crosshairs show the full extent of the region corresponding
+to the crosshair, accounting both for differences in resolution and for image
+interpolation. When crosshairs are completely removed from the image, time graphs
+will be updated for every movement of the cursor, rather than for movement of the
+crosshair.
+
+h/H
+This selection provides help in either short form (h, L button) or long form
+(H, R button). This help is very general. For questions about specific functions,
+use the "?" key or text button.
+
+?
+This feature provides the most detailed help about text buttons or regions of
+the window. One first clicks on the "?" text button or enter "?" from the keyboard,
+and then one clicks on a different text button or some regions of the window
+(e.g., colorbar, image, ...).
+
+s/S
+This option is available when an overlay is on the image data. Output for either a
+single time point (s, L button) or all time points (S, R button) goes to the shell
+window. The output consists of the number of voxels in the overlay, the average
+signal value, and the standard devation of the signal across the overlay.
+
+r/R
+
+
+
+overlay/wire
+This option is enabled when lists of predefined overlays or wire frames have been
+loaded during startup. If both lists of both overlays and wire frames have been
+loaded, selection of this field (L or R button) will toggle between the overlay
+and wire frame lists.
+
+overlay/wire lists
+This option is enabled when lists of predefined overlays or wire frames have been
+loaded during startup. The L and R buttons will move through overlay or wire frame
+list in the forward and backward directions, respectively. Up/down arrow keys
+act exactly like L/R buttons. The left/right arrow keys will add overlays or
+wire frames to the image without deleting existing ones.
+
+data type
+When complex data is loaded, this field allows the selection of magnitude, phase,
+real, or imaginary data display. The L/R buttons (or arrows) move one forward/backward
+through the 4 display options.
+
+display mode
+Selection of this options toggles between mosaic and tri-planar display modes.
+
+#
+This options enables one to change the number of panels in the mosaic display.
+A prompt provides two options:
+ 1) Input a number of panels, and the mosaic will show that number of panels containing
+    contiguous slices; one can shift the position of the slices shown in the mosaic by using
+    the < or > keys.
+ 2) Select any slices shown in the full mosaic using the L button, and they will be shown
+
+mosaic panels
+This option changes the number of row and columns in the mosaic display while keeping
+the number of slices constant. The L button increases rows (and decreases columns), while
+the R button decreases rows.
+

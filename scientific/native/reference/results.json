@@ -1,0 +1,26 @@
+[
+  {
+    "id": "metric-0-grid-1",
+    "summary": "metric=0 grid=1 initial=1.35246027 final=1.80531621 events=2922",
+    "trace_sha256": "17e65d1360cde0a08e2082e8f27c865d52561969f60c790a759659efb931e60f",
+    "trace_bytes": 51263568
+  },
+  {
+    "id": "metric-0-grid-4",
+    "summary": "metric=0 grid=4 initial=1.35246027 final=2.32792902 events=789",
+    "trace_sha256": "c8f54d379184ada433b437ae1ba14419fb54a7200f4fd580d5f0595115840552",
+    "trace_bytes": 9265824
+  },
+  {
+    "id": "metric-1-grid-1",
+    "summary": "metric=1 grid=1 initial=0.942355633 final=0.984748006 events=732",
+    "trace_sha256": "1e5f277641bf27e220f7052893624b9b0a1e837017f4a7fdca484988ca10eba4",
+    "trace_bytes": 12842208
+  },
+  {
+    "id": "metric-1-grid-4",
+    "summary": "metric=1 grid=4 initial=0.942355633 final=0.997341633 events=561",
+    "trace_sha256": "62cf7ff44bde07856cc865076f8e0e45883f60a8befb1efd84b8377b61947036",
+    "trace_bytes": 7055136
+  }
+]

@@ -1,20 +1,23 @@
+import {startBrowserHarness} from './browser-harness.mjs'
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import path from 'node:path'
 import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
 
-const require = createRequire(new URL('../source/package.json', import.meta.url))
+const require = createRequire(new URL('../apps/align/package.json', import.meta.url))
 const { chromium, firefox, webkit } = require('playwright-core')
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
-const dist = path.join(root, 'source', 'dist')
+const dist = path.join(root, 'apps/align', 'dist')
 const required = new Set((process.env.BRAINANA_REQUIRE_BROWSER_ENGINES || '').split(',').map(s => s.trim()).filter(Boolean))
 const engines = [
-  ['chromium', chromium, process.env.CHROMIUM_PATH || '/usr/bin/chromium'],
+  ['chromium', chromium, process.env.CHROMIUM_PATH || chromium.executablePath()],
   ['firefox', firefox, process.env.FIREFOX_PATH || firefox.executablePath()],
   ['webkit', webkit, process.env.WEBKIT_PATH || webkit.executablePath()],
 ]
+const harness=await startBrowserHarness()
 const results = []
+try {
 for (const [name, engine, executablePath] of engines) {
   if (!executablePath || !fs.existsSync(executablePath)) {
     results.push({ engine: name, status: 'not-installed', executablePath })
@@ -27,20 +30,9 @@ for (const [name, engine, executablePath] of engines) {
     const page = await browser.newPage({ viewport: { width: 1600, height: 1000 } })
     const errors = []
     page.on('pageerror', error => errors.push(error.message))
-    const indexHtml = fs.readFileSync(path.join(dist, 'index.html'), 'utf8')
-    const cssName = indexHtml.match(/href="\/assets\/([^"]+\.css)"/)?.[1]
-    const jsName = indexHtml.match(/src="\/assets\/([^"]+\.js)"/)?.[1]
-    assert.ok(cssName && jsName)
-    await page.setContent(`<style>${fs.readFileSync(path.join(dist,'assets',cssName),'utf8')}</style><div id="app"></div>`)
-    await page.evaluate(() => {
-      window.location.hash = `session=${'b'.repeat(64)}`
-      window.fetch = async input => {
-        const url = typeof input === 'string' ? input : input.url
-        if (url === '/api/config') return new Response(JSON.stringify({ enabled: true, mode: 'local', label: 'This Mac' }), { headers: { 'content-type': 'application/json' } })
-        throw new Error(`Unexpected fetch: ${url}`)
-      }
-    })
-    await page.addScriptTag({ content: fs.readFileSync(path.join(dist,'assets',jsName),'utf8'), type: 'module' })
+    await page.goto(harness.url+'/#session='+'b'.repeat(64))
+    await page.waitForSelector('#welcome-screen')
+    await page.locator('[data-registration-pairing="mri-ct"]').click()
     await page.waitForSelector('#mri-sagittal-placeholder')
     for (const plane of ['sagittal','coronal','axial']) {
       assert.equal((await page.locator(`#mri-${plane}-placeholder`).textContent())?.trim(), 'No MRI selected')
@@ -48,6 +40,8 @@ for (const [name, engine, executablePath] of engines) {
       assert.equal(await page.locator(`#mri-${plane}-window-layer`).count(), 1)
       assert.equal(await page.locator(`#ct-${plane}-window-layer`).count(), 1)
     }
+    assert.equal(await page.locator('#landmark-transform').inputValue(), 'rigid')
+    assert.deepEqual(await page.locator('#landmark-transform option').allTextContents(), ['Rigid, 6 parameters','Similarity, 7 parameters','Anisotropic scale, 9 parameters','Affine, 12 parameters'])
     const caps = await page.evaluate(() => ({
       ua: navigator.userAgent,
       pointerEvents: 'PointerEvent' in window,
@@ -70,3 +64,5 @@ const reportPath = process.env.BRAINANA_BROWSER_REPORT || path.join(root, 'brows
 fs.writeFileSync(reportPath, JSON.stringify({ generatedAt: new Date().toISOString(), required: [...required], results }, null, 2) + '\n')
 console.log(JSON.stringify(results, null, 2))
 if (!results.some(r => r.status === 'passed')) throw new Error('No browser engine completed the matrix')
+
+} finally {await harness.close()}

@@ -1,0 +1,4 @@
+import {applyNativeProcessing} from './nativeProcessingExport'
+import {prepareVolume} from '../../../packages/imaging-math/workingVolume'
+import {compressedAlignedImage} from '../../../packages/imaging-math/nativeImageExport'
+self.onmessage=async({data})=>{try{const progress=(text:string)=>self.postMessage({type:'progress',text});const source=data.file?await prepareVolume(data.file,data.info,data.info.spacing,data.frame,n=>progress(`Reading native moving image ${(n*100).toFixed(0)}%…`)):data.raw;if(data.processing)applyNativeProcessing(source,data.processing.base,data.processing.recipe,progress);const blob=await compressedAlignedImage(source,data.target,data.matrix,data.spline,progress,data.interpolation??'linear');self.postMessage({type:'result',blob})}catch(error){self.postMessage({type:'error',message:error instanceof Error?error.message:String(error)})}}

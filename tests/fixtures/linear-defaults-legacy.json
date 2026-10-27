@@ -1,0 +1,306 @@
+{
+  "reference": "Published 0.17.7 worker",
+  "results": {
+    "rigid": {
+      "matrix": [
+        [
+          1,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          1,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          1
+        ]
+      ],
+      "scoreBefore": 2,
+      "scoreAfter": 2,
+      "parameters": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "determinant": 1,
+      "warnings": [
+        "The intensity metric improved only slightly over center alignment."
+      ],
+      "candidatesEvaluated": 144,
+      "samplingDiagnostics": {
+        "fixedSamples": 12075,
+        "includedSamples": 11954,
+        "overlapFraction": 0.9899792960662526,
+        "occupiedJointBins": 31,
+        "bins": 32,
+        "sampling": "grid",
+        "seed": 1729,
+        "foreground": "all",
+        "normalization": "percentile"
+      }
+    },
+    "similarity": {
+      "matrix": [
+        [
+          1,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          1,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          1
+        ]
+      ],
+      "scoreBefore": 2,
+      "scoreAfter": 2,
+      "parameters": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "determinant": 1,
+      "warnings": [
+        "The intensity metric improved only slightly over center alignment."
+      ],
+      "candidatesEvaluated": 180,
+      "samplingDiagnostics": {
+        "fixedSamples": 12075,
+        "includedSamples": 11954,
+        "overlapFraction": 0.9899792960662526,
+        "occupiedJointBins": 31,
+        "bins": 32,
+        "sampling": "grid",
+        "seed": 1729,
+        "foreground": "all",
+        "normalization": "percentile"
+      }
+    },
+    "anisotropic": {
+      "matrix": [
+        [
+          1,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          1,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          1
+        ]
+      ],
+      "scoreBefore": 2,
+      "scoreAfter": 2,
+      "parameters": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "determinant": 1,
+      "warnings": [
+        "The intensity metric improved only slightly over center alignment."
+      ],
+      "candidatesEvaluated": 228,
+      "samplingDiagnostics": {
+        "fixedSamples": 12075,
+        "includedSamples": 11954,
+        "overlapFraction": 0.9899792960662526,
+        "occupiedJointBins": 31,
+        "bins": 32,
+        "sampling": "grid",
+        "seed": 1729,
+        "foreground": "all",
+        "normalization": "percentile"
+      }
+    },
+    "affine": {
+      "matrix": [
+        [
+          1,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          1,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          1
+        ]
+      ],
+      "scoreBefore": 2,
+      "scoreAfter": 2,
+      "parameters": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "determinant": 1,
+      "warnings": [
+        "The intensity metric improved only slightly over center alignment."
+      ],
+      "candidatesEvaluated": 264,
+      "samplingDiagnostics": {
+        "fixedSamples": 12075,
+        "includedSamples": 11954,
+        "overlapFraction": 0.9899792960662526,
+        "occupiedJointBins": 31,
+        "bins": 32,
+        "sampling": "grid",
+        "seed": 1729,
+        "foreground": "all",
+        "normalization": "percentile"
+      }
+    },
+    "custom": {
+      "matrix": [
+        [
+          1,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          1,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          1
+        ]
+      ],
+      "scoreBefore": 2,
+      "scoreAfter": 2,
+      "parameters": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "determinant": 1,
+      "warnings": [
+        "The intensity metric improved only slightly over center alignment."
+      ],
+      "candidatesEvaluated": 288,
+      "samplingDiagnostics": {
+        "fixedSamples": 12075,
+        "includedSamples": 11954,
+        "overlapFraction": 0.9899792960662526,
+        "occupiedJointBins": 31,
+        "bins": 32,
+        "sampling": "grid",
+        "seed": 1729,
+        "foreground": "all",
+        "normalization": "percentile"
+      }
+    }
+  },
+  "inputHash": "d0e2d9aa752c53ed5c01f37d8d842d52293bc359f76984d0099babd7bde4689a"
+}

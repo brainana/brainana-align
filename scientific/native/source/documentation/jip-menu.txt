@@ -1,0 +1,817 @@
+!0 0
+			{{{{ Main Menu }}}}
+
+              1)  common examples
+              2)  input options from unix shell
+	      3)  overview: command interpreter, volumes & stacks, ...
+              4)  input/output
+              5)  command dictionary: program control & monitoring
+              6)  command dictionary: registration
+	      7)  command dictionary: averaging
+	      8)  command dictionary: data reordering
+	      9)  command dictionary: math functions
+              10) command dictionary: filters, etc.
+              11) command dictionary: magnitude corrections
+              12) command dictionary: other
+
+!1 0 (common examples)
+			{{{{ Common Examples }}}}
+
+              1) smoothing or registering time series
+	      2) averaging across subjects in 4 dimensions
+	      3) creating your own template volume from an existing template
+	      4) T2 or T2* maps
+	      5) your suggestions?
+
+!1 1 (example: smoothing or registering)
+			{{ smoothing or registering }}
+
+These examples show how to smooth data or register data in small memory bites using read-loop.
+Commands are "jip smooth.com input 1.5" (1.5 mm smoothing kernel) and "jip register.com input"
+to read file "input.nii" and to output files "input-smooth.nii" or "input-reg.nii"
+
+usage: jip smooth.com input 2	usage: jip register.com input 
+file smooth.com below:		file register.com below:
+
+   # This is a comment line	read alignment-variables.com
+   read-loop $1.nii		read-loop $1.nii data  # in this simple example,
+   smooth-3d $2			register         data  # the stack name "data" is unnecessary;
+   write $1-smooth.nii		write $1-reg.nii data  # it can be excluded like in smooth.com
+   end-loop			end-loop
+   bye				bye
+   
+!1 2 (example: averaging in 4 dimensions)
+			{{ averaging in 4 dimensions }}
+
+When there are x*y*z*t voxels and n subjects, the memory requirements can blow up. This shows how
+to create a subject-averaged time series by averaging small bites from each file.
+   
+usage: "jip average.com" to average 3 subjects with 550 time points each.
+       Note that subject data should be normalized 1st ("normalize" command) if the data are raw
+       MRI signal levels, as opposed to a physiological quantity like fCBV or relaxation rate.
+files: average.com and subjects.com
+
+average.com is below:			subjects.com is below:
+
+read subject.com 0-99			read subject1.nii>$1 s1
+read subject.com 100-199		read subject2.nii>$1 s2
+read subject.com 200-299		read subject3.nii>$1 s3
+read subject.com 300-399		average-stacks av
+read subject.com 400-n			write average.bshort av
+bye					delete   # clear memory
+
+!1 3 (example: creating your own template volume)
+			{{ creating your own template volume }}
+
+Cross-subject registration based upon a template is a common function during analysis.
+Let's suppose you have a template volume and you want to maintain the field of view for
+use with wire frames (which can generate overlays), but you want to change the resolution
+and perhaps the number of slices.  This can be done by "jip make-template.com", which calls
+"resolution-250x250x1000.com".  The file "make-template.com" is:
+
+read template-rare.nii rare
+read resolution-250x250x1000.com
+register
+write my-template.nii
+bye
+
+... and the file "resolution-250x250x1000.com" looks something like this:
+# It is necessary to set the resolution and matrix size.
+# If not set explictly, the origin and direction will be inherited.
+# Matrix size: resolution * matrix should be conserved in each dimension.
+# The original matrix is 64 x 50 x 42 with resolution 0.25 x 0.25 x 0.5
+shift-pixels 0 0 -2  # This command keeps track of the origin!
+clip-z-to 36         # now the z extent is 18 mm, not 21 mm
+set registration-resolution   0.25 0.25 1
+set registration-matrix       64   50   18
+
+!1 4 (example: T2 or T2* maps)
+Creating maps of T2 or T2* is a simple procedure based upon fitting a series of data with
+different echo times.  Assuming everything is maintained constant across acquisitions but
+the echo time, the MRI signal is S = S0 * exp(-TE*R2), where R2 = 1/T2 or 1/T2*. This can
+be linearized as y = mx + b, where y = ln(S), b = ln(S0), x = TE, and m = -R2.
+You can create a map like this:
+
+read file1.nii TE5
+read file2.nii TE10
+read file3.nii TE15
+read file4.nii TE20
+read file5.nii TE25
+smooth-3d 0.5                          # optional step to decrease noise
+write te-series.nii                    # it's always a good idea to view the TE series
+set map-array   5   10   15   20   25  # ms
+map-t2 map    TE5 TE10 TE15 TE20 TE25  # map contains 3 volumes: R2, T2, and S0
+multiply-constant 1000 map>0           # convert R2 to 1/sec
+read brain.ovl                         # if working with aligned data, use an overlay ...
+magnitude-window                       # ... to kill noise outside the brain (optional)
+write map.bfloat map                   # outputs 3 maps (R2,T2,S0). Use .bfloat or .nii
+write r2.bfloat  map>0                 # You can separate maps into different files if desired.
+bye
+
+!1 5 (example: suggestions)
+If you have suggestions for a commonly used function, it can be incorporated here.
+
+!2 0 (input options from shell window)
+This program is invoked as follows from the unix/Linux shell window:
+
+1) interactive mode: invoke the executable and then enter commands
+			Syntax: executable
+			jip > help  # ... to get this help file
+
+2) script mode: create or use a file of commands (most common method)
+			Syntax: executable [command file name] pass1 pass2 pass3 ... pass9
+			where
+				[command file name] is a file containing jip commands, and
+				pass1 is the 1st argument to pass to the command file, and so on.
+
+!3 0 (overview)
+			{{{{ Overview }}}}
+ 
+	      Command tool for image processing
+	      Written by Joe Mandeville (jbm@nmr.mgh.harvard.edu)
+	      Please report bugs.  Suggestions are welcome.  Sometimes I agree.
+
+	      1) Overview: what is jip?
+              2) command interpreter
+              3) volume lists & stack lists
+
+!3 1 (jip overview)
+"jip" is a command-oriented program for performing image i/o and
+processing.  "Stacks" of image volumes are assigned names as they are read from disk
+files or as they are created by other means, and subsequent operations are performed
+on selected volumes or stacks according to the command and specifications given by the user.
+Arbitrary image subsets of any stack can be selected in a flexible way.
+all levels within the program.
+
+Commands can be entered either interactively or through an existing disk file.
+When using a disk file of commands, strings may be passed to "jip" as unix parameters
+and substituted into the command file.
+
+!3 2 (command interpreter)
+All commands which operate on images have the basic form
+      <command> <required arguments> <optional image list or stack list>.
+
+Other commands include those that take no argument (e.g., "help" or "quit")
+and the "set" and "show" commands, which use the syntax
+        set  <variable name> <value(s)>
+        show <variable name>
+
+Special characters are the following: #>$
+
+The "#" character allows comments; everthing after that character is ignored.
+This is a useful feature to document a text file of commands.
+
+The ">" character signifies that a set of image volumes is to be selected from a
+stack of volumes.  For instance, suppose the stack "functional" contains 100
+volumes.  The command "average baseline functional>0-20" averages the 1st
+21 volumes and creates a new stack (named "baseline") with one volume.  The
+command "average activation functional>30-39,60-69,90-99" averages 30 volumes.
+
+The $ character is used for command substitution.  Suppose that one created
+the following text file named "average.com":
+		read $1.nii        functional
+		average baseline   functional>0-$2
+		average activation functional>$3
+		write $1_baseline.nii baseline
+		write $1_activate.nii activation
+		bye
+The following unix command line would read file "visual.nii" and create
+output files "visual_baseline.bfloat" and "visual_activate.bfloat", each
+containing a single image volume.
+              unix% jip average.com visual 20 30-39,60-69,90-99
+
+
+!3 3 (Volume lists & stack lists)
+			{{{{ Volume Lists & Stack Lists }}}}
+
+This documentation refers to "volume lists" and "stack lists".  There are
+some commands which can be performed on individual volumes within a stack
+without affecting other volumes in the stack.  For instance, the following
+syntax is legal:	average baseline stack>0-20
+		        write test.bfloat stack>10,20
+Note that the volume counter begins at 0, not 1.  Also note that one can specify the last
+volume as "n" to handle cases where a single script is used for variable-length runs:
+			average saturated all>5-n   # ignore 1st 5 time points due to TR/T1 effect
+
+Some commands, however, cannot be performed on individual volumes without
+affecting all volumes in a stack.  For instance, the "pad" command alters the
+dimensions of a volume, which cannot be done without altering the entire
+stack.  If a syntax like "pad stack1>3-7 stack2>3-7" is used, the volume list
+is converted to a stack list, and all volumes in "stack1" and "stack2" are padded.
+
+One more necessary concept: when no volumes are specified, all volumes are
+selected.  Suppose that two stacks, "stack1" and "stack2", exist in memory
+and each have 10 volumes.  The command "transform" with no arguments performs
+a Fourier transformation on all volumes in memory, or 20 volumes.  The command
+"transform stack1" transforms all volumes in "stack1", or 10 volumes.
+
+!4 0 (input/output)
+			{{{{ File Input/output }}}}
+
+              1) file formats
+	      2) magnitude and complex data
+	      3) read  commands
+	      4) write commands
+
+!4 1 (jip data files)
+>file-format-menu.txt
+
+!4 2 (magnitude & complex data)
+			{{ complex data }}
+INTERNAL: Internal to this program, all data is complex. The data type can be seen using "show-stacks".
+	  To convert between magnitude-phase and real-imaginary data, use the command
+	  	  convert-complex [optional stack list]
+	  For averaging, each element of complex pairs is averaged.  The averaging is either phase-sensitive
+	  or phase-insensitive depending upon the complex type. Also, complex output uses the current
+	  type, as explained below.
+   
+INPUT: On input, the data type is assigned to be either magnitude-phase or real-imaginary.
+       If no "data-type" is specified in the header of jip data files, or if the data type is "magnitude",
+       then nx*ny*nz*nt data values will be read from the file and the data type will stored as
+       magnitude-phase with 0 phase. If the data type is speficied to be either "magnitude-phase" or
+       "real-imaginary", then 2*nx*ny*nz*nt data values will be read from the file in complex pairs.
+
+OUTPUT: By default, the output data type is "magnitude". To store complex data, set the program variable
+	"complex-output"
+		set complex-output [on or off]
+
+!4 3 (read commands)
+			{{ read commands }}
+1) read
+   syntax:	read [file name]>[optional volume_list] [optional stack name]
+   description: This command reads a file, or optionally a subset of image volumes from within a file,
+		and it places the image volumes into a data "stack" with a specified name. If no volumes
+		are specified in the list above, all volumes in the file are read.  If no stack name is given,
+		one will be assigned from the file name.
+   examples:	read file.bshort fMRI
+		read file.bshort>0-29 baseline
+		read file.nii>30,57   bad_points
+
+2) read-loop, end-loop
+   syntax:	read-loop [file name] [optional stack name]
+		... jip commands
+		end-loop
+   description:	For memory-intensive operations when it isn't necessary to read the entire file at one time,
+		the file can be read in bites/bytes. Typical operations are registration and/or smoothing
+   examples:	read alignment-parameters.com
+		read-loop fMRI.nii       # start a loop reading this file
+		register		 # register based upon the alignment parameters
+		smooth-3d 2		 # smooth using a 3-dimensional kernal of 2 mm
+		write register.nii       # note that each write statement will add to this file
+		end-loop                 # end the loop
+		bye                      # terminate when done
+
+3) read an overlay
+   syntax:	read file.ovl
+   description: Read an overlay file. Only one overlay exists in memory at any given time.
+		However, depending upon the setting of the "overlay-logic" variable, reading additional
+		overlays can either either replace the existing overlay, add to the existing overlay,
+		or add only if the voxel was already set by the prior overlay.  Values for overlay-logic are:
+		       set overlay-logic replace   # default: just replace any prior overlays
+		       set overlay-logic or        # logical "or"; add to existing overlay
+		       set overlay-logic and       # logical "and"; set each voxel only if it was already set
+4) read a jip command file
+   syntax:	read file.com arg1 arg2 arg3 ... arg9
+   description: Transfer input control for jip commands to file file.com, and also potentially pass
+		arguments 1 through 9. In file file.com, "arg1" will replace any occurences of "$1" and so on.
+
+!4 4 (write commands)
+			{{ write commands }}
+1) write
+   syntax:	write [file name] [optional stack or volume list]
+   description: This command writes all specified volumes into the specified file. If a file name is used
+		in more than 1 write statement, the additional data will be appended to the file. If no
+		volumes or stacks are specified, all data in memory will be written to the file, if all
+		data volumes have the same dimensions (otherwise, an error is reported).
+   examples:	write file.nii run1>1-n       # write all values but the 1st value (time point 0) to a new file
+		write file.nii run2>1-n       # add to the file file.nii
+		write file.nii run3 run4>1-n  # add more to the file
+
+2) write-short, write-float
+   syntax:	write-short [file name root].nii [optional stack or volume list]
+   description: This command is exactly the same as the "write" command, but it specifies the data format
+		for NIFTI files.
+   examples:    write-short file1.nii run1
+		write-float file2.nii run2
+
+3) write-slices
+   syntax:	write-slices [file name].extension [optional stack or volume list]
+   description: This is like the above commands, except that output is directed to n different files for
+		n slices. Extensions can be .bshort or .bfloat.
+   examples:    write_slices f.bshort run1   # goes to files f_000.bshort ... f_019.bshort for 20 slices
+   suggestions: Don't use this command.
+
+!5 0 (program control & monitoring)
+			{{{{ Program control & monitoring }}}}
+
+help			invokes this help menu.
+
+bye, quit, exit, stop	terminates the program
+
+set [variable] value(s)	sets a program variable to the given value or values.
+			Example: set translations 1 0 -1
+			This sets the x, y, and z shifts used for image registration.
+
+show [variable]		This is used to show the value of a given variable. It's rarely used.
+
+show-stacks		This command shows the dimensions of all stacks existing in program memory.
+
+delete			This command deletes all stacks from program memory.
+
+mode [file name]	transfers program input to the given file name.
+read [file name].com	This command can be used to repeat functions.
+			For instance, "jip average.com" gets commands from average.com,
+			which might try to minimize memory requirements by averaging files in
+			small bites/bytes using the following method:
+			      read av.com 0-99     # this file is "average.com"
+			      read av.com 100-199
+			      read av.com 200-299  # an alternative syntax: mode av.com 200-299
+			      read av.com 300-399
+			      read av.com 400-499
+			      bye
+
+			      read file1.nii>$1 file1  # this if file "av.com"
+			      read file2.nii>$1 file2
+			      read file3.nii>$1 file3
+			      read file4.nii>$1 file4
+			      average-stacks av file1 file2 file3 file4
+			      write average.nii av
+			      delete
+		      
+!6 0 (registration)
+		{{{{ Registration }}}}
+
+              1) registration variables
+	      2) register command
+	      3) down-sample command
+	      4) using "register" for simple tasks
+
+!6 1 (registration variables)
+			{{ Registration variables }}
+
+Like all variable in jip, the syntax is "set variable [value(s)]".
+
+name			  values	     	     default
+------------------------  -------------------------  ----------------------------------
+registration-type	  rigid-body		     rigid-body
+			  deck-of-cards		     
+registration-matrix	  [3 integers]		     no default; MUST ALWAYS BE GIVEN
+registration-resolution	  [3 real values]	     no default; MUST ALWAYS BE GIVEN
+registration-origin	  [3 real values]	     none; taken from 1st registered volume if not set
+registration-direction	  [3 integers]		     none; taken from 1st registered volume if not set
+registration-orientation  [4 integers]		     0 0 0 0
+			  1st 3 are 90-deg angles: 0, 1, -1
+			  last integer is swap-z flag: 0 or 1
+registration-translations [3 real values]	     0 0 0
+registration-rotations	  [3 real values]	     0 0 0
+registration-inflations	  [3 real values]	     1 1 1
+registration-skews	  [3 real values]	     0 0 0
+
+!6 2 (registration command)
+			{{ register }}
+
+The register command is useful for several functions. Of course, first and foremost is the ability to
+reorient image volumes to a standard space.
+  However, this command additionally can be used to change the resolution of the field of view of an image
+(e.g., an atlas image or a histological slice). In this latter capacity, it can be use in place of the
+"clip" commands, for instance. If it is desired to significantly down-rate the resolution, consider using
+the "down-sample" command, perhaps after 1st using the "register" command to set the resolution in each
+dimension to a value close to the original value but one that is a multiple of the desired lower resolution.
+
+syntax:	       register [optional volume list]
+description:   This command changes the resolution and the number of voxels and optionally also reorients
+	       data volumes.
+example:       read alignment-variable.com   # This file contains shifts, rotations, matrix, etc.
+	       register subject1
+example:       set registration-matrix 64 50 76
+	       set registration-resolution 0.25 0.25 0.50 # fov = 16 12.5 38
+	       register mri-template
+
+!6 3 (down-sampling)
+			{{ Down sampling to lower resolution }}
+Down-sampling is conceptually similar to registration, except for two things:
+1) Only the matrix need be specified using "set registration-matrix [3 integers]".
+   The field of view will be maintained by changing the resolution.
+2) This function employs Gaussian-weighted interpolation instead of sinc interpolation to properly
+   sample the relevant range of voxel values in the parent image. As a result, "down-sampled" images
+   look smoother than "registered" images that use the same matrix and resolution.
+
+syntax:	       down-sample [optional volume list]
+description:   This command changes the number of voxels to match the specified number defined by
+	       the "registration-matrix" variable. The resolution is adjusted in order to maintain
+	       the field of view.
+example:       set registration-matrix 64 50 76 # The target matrix values should be LOWER
+	       down-sample rat_template         # than the original values in rat_template
+
+!6 4 ("register" for simple tasks)
+			{{ "register" for simple tasks }}
+Sometimes you might want to use the "register" command without going through the alignment tool to generate
+a list of registration variables. For instance, suppose you just want to rotate the data by 90 degrees.
+In such a case, you can specify the minimum information required, and other information will be inherited
+from the data stack subject to the transformation. For instance, the following command will rotate a volume
+by 90 degrees in the x-y plane:
+      read file.nii data
+      set registration-rotations 90 0 0
+      register data
+      write file-rot.nii
+      bye
+In this example, the matrix size, resolution, direction, and origin are inherited from the existing stack
+named "data" above. No translations, inflations, or skews are applied.
+
+Other examples of simple transformations include shifting data or increasing the resolution (interpolation)
+by changing both the resolution and matrix size to keep a fixed field of view. 
+
+!7 0 (averaging)
+		{{{{ averaging }}}}
+
+Averaging is performed separately on the each component of the complex data.  If data is magnitude-phase,
+the default storage type, then averaging is insensitive to phase.  If data is real-imaginary, then averaging
+is phase-sensitive.  See the file i/o section for more information about complex data types.
+
+              1) average
+		 average-stacks
+              2) average-by
+`		 average-epochs
+	      3) smooth-2d
+		 smooth-3
+
+!7 1 (average, average-stacks)
+These are most common averaging commands.
+
+syntax:	       average [new stack name] [optional volume list]
+description:   This command averages all volumes in the list into a single volume that is stored in a stack
+	       with the specified name.
+example:       average baseline fMRI>0-49
+
+syntax:	       average-stacks [new stack name] [optional stack list]
+description:   This command averages the 1st volumes of all stacks in the list to generate the 1st volume
+	       of the new stack, the 2nd volumes of all stacks in the list are averaged to generate the 2nd
+	       volume in the new stack, and so on.  The number of volumes per stack must all agree.
+
+!7 2 (average-by, average-epochs)
+
+syntax:	       average-by [integer bin size] [new stack name] [optional volume list]
+description:   This command creates a new stack formed by binning adjacent volumes in the
+	       volume list into a single time point.  If there are n volumes and the bin size is m,
+	       then there will be n/m volumes in the new stack.  For a bin size of 4, this command
+	       averages volumes 0-3 to create the 1st volume in the new stacks, volumes 4-7 are averaged
+	       to create the 2nd volume in the new stack, and so on.
+
+syntax:	       average-by [integer epoch length] [new stack name] [optional volume list]
+description:   This command creates a new stack by 4-dimensional averaging of adjacent epochs.
+	       If the epoch length is 100, for instance, then volumes 0, 100, 200, ... are averaged
+	       together to create the 1st volume in the new stack. The 2nd volume in the new stack
+	       is the average of volumes 1, 101, 201, ... and so on.
+	       
+!7 3 (smooth-2d, smooth-3d
+Smoothing is performed by transforming data to the conjugate k-space and then multiplying the data by
+the Fourier transform of the Gaussian smoothing kernel.
+
+syntax:	       smooth-2d [FWHM of Gaussian smoothing kernel] [optional volume list]
+description:   This command smooths data in the x and y dimensions only.
+
+syntax:	       smooth-3d [FWHM of Gaussian smoothing kernel] [optional volume list]
+description:   This command performs isotropic smoothing in the x, y, z dimensions.
+
+!8 0 (data reordering)
+		{{{{ data reordering }}}}
+
+              1) clip
+	      2) pad (obsolete)
+	      3) mirror
+	      4) integer pixel shifts
+	      5) slice ordering
+	      6) shuffle
+
+!8 1 (clipping)
+		{{ clipping }}
+Clipping symmetrically removes voxels from the edges of images to reduce the field of view but not
+alter the resolution. As an alternative to clipping, you might consider the "register" command.
+
+syntax:	       clip-x [optional stack list]
+	       clip-y [optional stack list]
+	       clip-z [optional stack list]
+description:   These commands clip the data to the next lower power of 2 (e.g., 128, 64, 32, ...).
+	       This is useful when you want to maintain power-of-2 matrices for FFTs.
+	       Note the Fourier transforms in this program now rely upon FFTW, which works for all sizes.
+
+syntax:	       clip-x-to [integer dimension] [optional stack list]
+	       clip-y-to [integer dimension] [optional stack list]
+	       clip-z-to [integer dimension] [optional stack list]
+description:   These commands clip the data to the specified integer dimension.
+
+!8 2 (padding)
+		{{ padding (OBSOLETE) }}
+Padding symmetrically zero-fills data by adding voxels to the edges of images.
+The combination of (inverse-transform, pad, transform) is one way to perform interpolation,
+which maintains the field of view but changes the resolution (number of voxels across the FOV).
+As an alternative to padding, you might consider the "register" command.
+Because Fourier transforms now use FFTW, which works for any dimensions, these commands are OBSOLETE.
+
+syntax:	       pad-x   [optional stack list]
+	       pad-y   [optional stack list]
+	       pad-z   [optional stack list]
+	       pad     [optional stack list]
+	       pad-xyz [optional stack list]
+description:   These commands pad data to the next higher power of 2 (e.g., 128, 64, 32, ...).
+	       This is useful when you want to maintain power-of-2 matrices for FFTs.
+	       Note the Fourier transforms in this program now rely upon FFTW, which works for all sizes.
+	       "pad-xy" works on x and y and "pad-xyz" works on all 3 dimensions.
+
+syntax:	       pad-x-to [integer dimension] [optional stack list]
+	       pad-y-to [integer dimension] [optional stack list]
+	       pad-z-to [integer dimension] [optional stack list]
+description:   These commands pad the data to the specified integer dimension.
+
+!8 3 (mirror)
+		{{ mirror }
+These commands can be useful to reorient data. For instance, a left-right mirror will reverse radiological
+coordinates, and an up-down mirror can be used to convert X11 coordinate conventions (e.g., as used by Bruker)
+to openGL convention (as generally used by NIFTI viewers). Note that these command will swap the parity
+of the coordinate system unless the coordinate directions also are swapped by editing the "direction" field
+of the jip data file header.
+
+syntax:	       mirror-left-right [optional volume list]
+description:   This command mirrors all voxels in the x dimension.
+
+syntax:	       mirror-up-down [optional volume list]
+description:   This command mirrors all voxels in the y dimension.
+
+!8 4 (integer pixels shifts)
+		{{ pixel shifts }
+As an alternative to integer pixel shifts, consider the "register" command.
+For usage of this command with "register" to change the number of slices in a template volume,
+see the examples.
+
+syntax:	       shift-pixels [x shift] [y shift] [z shift] [optional volume list]
+description:   This command shifts pixels by the specified integer values.
+
+!8 5 (slice ordering)
+		{{ slice ordering }
+
+reorder-interleaved-slices
+reorder-slices
+reverse-slice-order
+set slice-order
+
+!8 6 (shuffle)
+		{{ shuffle}
+
+syntax:	       shuffle [new stack name] [stack list]
+description:   The shuffle command is useful when data are arranged as time series for individual slices.
+	       The new stack constains the 1st time point from the 1st stack followed by the 1st time
+	       point for the 2nd stack, ..., and then the 2nd time point for the 1st stack followed by
+	       2nd time for the 2nd stack, and so on. On output, use the jip data file format so that the
+	       number of time points and the number of slices can be edited in the ASCII header file.
+	       Subsequently, this file can be converted to NIFTI format by jip if desired. 
+example:       read file1.nii series1
+	       read file2.nii series2
+	       read file3.nii series3
+	       shuffle all series1 series2 series3
+	       write all.bshort all
+	       bye
+
+!9 0 (math functions)
+		{{{{ math functions }}}}
+
+              1) add-constant, subtract-constant, divide-constant, multiply-constant
+	      2) add,          subtract,          divide,          multiply
+              3) add-stacks,   subtract-stacks,   divide-stacks,   multiply-stacks
+	      4) abs, exp, ln, atan
+	      5) create-fCBV
+
+!9 1 (add-constant, etc.)
+		{{ add-constant, etc. }}
+
+syntax:	       add-constant [constant] [optional volume list]
+description:   This command adds a constant value to all voxels in the volume list.
+
+syntax:	       subtract-constant [constant] [optional volume list]
+description:   This command subtracts a constant value to all voxels in the volume list.
+
+syntax:	       multiply-constant [constant] [optional volume list]
+description:   This command multiplies a constant value to all voxels in the volume list.
+
+syntax:	       divide-constant [constant] [optional volume list]
+description:   This command divides a constant value to all voxels in the volume list.
+example:       divide-constant 0.02 ln_S_S0   # divide by TE to convert ln(S/S0) to relation rate
+
+!9 2 (add, etc.)
+		{{ add, etc. }}
+
+For these commands, it is necessary to explictly specify the 1st volume by a text string that is
+separate from the following list, if one is given.  See the example under "divide" below.
+Note that this math can be phase-sensitive or insensitive, depending upon whether or not the data is
+stored as magnitude-phase or real-imaginary.
+
+syntax:	       add [single volume] [optional volume list]
+description:   This command add the 1st volume to all subsequent volumes.
+	       All volumes in the list are affected, but the 1st single volume is unchanged
+	       (unless it happens to be in the list; be careful about this!).
+
+syntax:	       subtract [single volume] [optional volume list]
+description:   This command subtracts the 1st volume from all subsequent volumes.
+
+syntax:	       multiply [single volume] [optional volume list]
+description:   This command multiplies all volumes in the list by the 1st volume.
+
+syntax:	       divide [single volume] [optional volume list]
+description:   This command divides the 1st volume into all subsequent volumes.
+example:       divide preIRON postIRON_time_series   # the 1st step to ln(S(t)/S_preIRON)
+       
+
+!9 3 (add-stacks, etc.)
+		{{ add-stacks, etc. }}
+
+For these commands, it is necessary to explictly specify the 1st volume by a text string that is
+separate from the following list, if one is given.  See the example under "divide" below.
+Note that this math can be phase-sensitive or insensitive, depending upon whether or not the data is
+stored as magnitude-phase or real-imaginary.
+
+syntax:	       add-stacks [single stack] [stack list]
+description:   This command adds each volume in the 1st stack to each of the corresponding volumes
+	       in each of the stacks in the list.  All volumes in the list are affected, but the 1st
+	       single volume is unchanged (unless it happens to be in the list; be careful about this!).
+
+syntax:	       subtract-stacks [single stack] [stack list]
+description:   This command subtracts each volume in the 1st stack from each of the corresponding volumes
+	       in each of the stacks in the list, affecting all stacks in the list.
+
+syntax:	       multiply-stacks [single stack] [stack list]
+description:   This command multiplies each volume in each stack in the list by the corresponding volume
+	       in the 1st stack.
+
+syntax:	       divide-stacks [single stack] [stack list]
+description:   This command divides each volume in each stack in the list by the corresponding volume
+	       in the 1st stack.
+
+!9 4 (abs, exp, ln, atan)
+		{{ abs, exp, ln, atan }}
+
+syntax:	       abs [optional volume list]
+description:   This command makes all voxels in all volume positive by taking the absolute value.
+
+syntax:	       exp [constant] [optional volume list]
+description:   This command performs exp(voxel_value/constant) for all voxels in all volumes.
+
+syntax:	       ln [constant] [optional volume list]
+description:   This command performs ln(voxel_value/constant) for all voxels in all volumes.
+
+syntax:	       atan [single volume] [optional volume list]
+description:   This command performs atan(voxel/voxel1), where "voxel" is the value of voxel in one of the
+	       volumes in the list, and "voxel1" is the corresponding voxel in the 1st volume.  The final
+	       value is an angle in degrees between -90 and 90.
+
+!9 5 (create-fCBV, create-fCBV1)
+		{{ converting to fCBV }}
+
+Define fCBV as the percentage change in CBV induced by a functional task when using an iron oxide agent.
+
+
+syntax:	       create-fCBV [new stack name] [preIRON volume] [postIRON volume] [optional volume list]
+description:   This command converts each voxel of each volume in the list into the percentage change
+	       in CBV based upon the signal drop obtained computed using the preIRON and postIRON volumes.
+	       To minimize effects of signal drift from loss of iron oxide or from changes in physiology,
+	       the postIRON volume should be computed as an average of the baseline condition from the
+	       volume list rather than as a post-injection value that was temporally distant from the
+	       functional time series.
+example:       average baseline fMRI>0-30
+	       create-fCBV fCBV preIRON baseline fMRI
+
+!10 0
+		{{{{ Filters }}}}
+
+              1) Fourier transforms
+	      2) hamming windows
+	      3) other
+
+!10 1 (Fourier transforms)
+		{{ Fourier transforms }}
+
+Image reconstruction functions largely have migrated out of this program, so these functions are not used
+much any more.  Ask Joe about data reconstrution software if interested.
+
+syntax:	       transform [optional volume list]
+description:   FT from k-space to image space in the x and y dimensions, assuming slice-selection in z.
+
+syntax:	       transform-xyz [optional volume list]
+description:   FT from k-space to image space in the x, y, and z dimensions.
+
+syntax:	       transform-x [optional volume list]
+description:   FT from k-space to image space in the x dimension.
+
+syntax:	       transform-y [optional volume list]
+description:   FT from k-space to image space in the y dimension.
+
+syntax:	       inverse-transform [optional volume list]
+description:   FT from image space to k-space in the x and y dimensions, assuming slice-selection in z.
+
+syntax:	       inverse-transform-xyz [optional volume list]
+description:   FT from image space to k-space in the x, y, and z dimensions.
+
+syntax:	       inverse-transform-x [optional volume list]
+description:   FT from image space to k-space in the x dimension.
+
+syntax:	       inverse-transform-y [optional volume list]
+description:   FT from image space to k-space in the y dimension.
+
+!10 2 (hamming windows)
+		{{ hamming windows }}
+
+As an alternative, use the "smooth-3d" or "smooth-2d" functions.
+
+A hamming window performs spatial smoothing by multiplying the data in k-space by a low-pass filter.
+This is similar to a Gaussian filter in k-space, except the hamming filter with a non-adjustable range
+that is designed as a compromise between maintaining resolution and minimizing side-lobes (ringing).
+     filter(n) = 0.54 - 0.46 * cos(2*PI*n/(N-1)), where
+     n is a voxel index in a given dimension, and
+     N is the number of voxels in that dimension.
+
+These functions assume the data is already in k-space. If not, use:
+inverse-transform
+hamming-window
+transform
+
+syntax:	       hamming-window [optional volume list]
+description:   Filter the data in x and y, but not z (assumes slice selection).
+
+syntax:	       hamming-window-xyz [optional volume list]
+description:   Filter the data in x, y, and z.
+
+!10 3 (other filters)
+		{{ other filters }}
+
+syntax:	       edge-filter [optional volume list]
+description:   Perform and edge filter in x and y, but not z.
+
+
+!11 0 (magnitude corrections)
+		{{{{ magnitude corrections }}}}
+
+              1) scale and normalize
+	      2) magnitude-window & magnitude-window-together
+	      3) baseline-correct & baseline-correct-together
+
+!11 1 (scale & normalize)
+		{{ magnitude corrections: scale & normalize }}
+
+syntax:	       scale [maximum value] [optional volume list]
+description:   This command finds the maximum value of all voxels in all volumes in the list, and it then
+	       scales all the volumes in order to set the maximum value to the requested maximum value.
+	       This command is useful in order to convert data to a range suitable for short integers so
+	       that data can be written using that format.  Alternatively, this command can be used to put
+	       different images on the same scale in order to facilitate viewing. In the latter case, use
+	       separate scale commands for each volume of interest; within a single scale command, all volumes
+	       are scaled by the same factor.
+example:       scale 30000 fMRI
+	       write fMRI.bshort fMRI
+example:       scale 30000 volume1
+	       scale 30000 volume2
+	       write compare.nii volume1 volume2
+
+syntax:	       normalize [average value] [optional volume list]
+description:   This command finds the average value of all voxels in all volumes in the list, and it then
+	       scales the data so that the new average is the requested average.  This command is useful
+	       if the purpose is to average data: normalization makes sure that one data set does not rule
+	       the average.
+
+!11 2 (magnitude-window)
+		{{ magnitude-window }}
+
+syntax:	       magnitude-window [optional volume list]
+description:   This command either maintains voxel values or sets them to zero by working together with
+	       1) overlays, and 2) a range of values specified by "filter-range". If no overlay is set,
+	       then all voxels are maintained if they pass the cut specified by filter-range.  If the filter
+	       range is zero, then only the overlay is considered.
+example:       set filter-range 300. 1.e10
+	       magnitude-window gray_image   # cut out all values below 300 or above 1.e10
+example:       set filter-range 1 1  # this is the default value; 0 width means ignore filter-range
+	       read brain.ovl
+	       magnitude-window registered_rat # get rid of everything but the brain
+
+syntax:	       magnitude-window-together [optional volume list]
+description:   This command works exactly as above, EXCEPT voxels are maintained in the volume list only
+	       if every volume satisfies the cut on the filter-range.
+
+!11 3 (baseline-correct)
+		{{ baseline corrections }}
+
+Image reconstruction functions largely have migrated out of this program, so these functions are not used
+much any more.  Ask Joe about data reconstrution software if interested.
+
+syntax:	       baseline-correct-together [optional volume list]
+description:   This function performs a baseline correction to "raw" (k-space) image data in order to
+	       remove any DC level artifacts in reconstructed images. In each dimension, the corners of
+	       k-space (N/8 voxels on both sides) are sampled to find the average values of the real and
+	       imaginary parts. These averages are averaged across all volumes.  The resulting averages
+	       (one real value, and one imaginary value) are subtracted from all the data.
+
+syntax:	       baseline-correct [optional volume list]
+description:   This function performs a baseline correction exactly as above, except that each volume
+	       gets its own baseline correction.  Use the "baseline-correct-together" command unless
+	       there is evidence (unlikely) that the baseline is wandering between volumes.
+
+!12 0 (other commands)
+		{{{{ other commands }}}}
+
+This section is incomplete.  Coming soon ...

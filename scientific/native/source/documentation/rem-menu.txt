@@ -1,0 +1,170 @@
+!0 0
+                 RANDOM EFFECTS MODEL (2nd-order GLM)
+			MAIN MENU
+
+              1) overview of REM
+              2) input options from shell window
+              3) REM control file
+              4) Interface with xd
+
+	      The method used is described here:
+	      "A General Statistical analysis for fMRI data."
+	      Worsely et al. 2002; NeuroImage 15(1):1-15.
+
+!1 0 (overview)
+		{{ REM overview }}
+
+A 1st-level GLM for fMRI is used to analyze time-series data in order to find the contrast, noise,
+and statistics associated with each specified "condition", which corresponds to a single event,
+a differential comparison, or some combination of event sums and differences. To analyze results across
+subjects, one can imagine simply treating all subjects as a series of concatenated runs, so that
+the average value for each condition is computed using a 1st-level GLM across subjects.  Such an
+analysis is a "fixed-effects" type, which is so named because it assumed that sources of noises are
+fixed across subjects (e.g., variance is not subject-dependent). In fact, variance can changes across
+subjects for both biological and technical reasons. By ignoring this fact, a purely fixed-effects analysis
+mainly errs by introducing false positives. False positives occur because 1) a single "true" activation
+may be particularly large in one or a few subjects but not in the group as a whole (i.e., one or several
+outliers drive the group average), and 2) the same effect can occur due to "false" activations due
+to motion or other effects. So, a 2nd-level analysis is more statistically conservative and cleaner
+from artifact than a 1st-level analysis.
+
+!2 0 (input options from shell window)
+		{{ REM inpuyt options }}
+This program is invoked as follows from the unix/Linux shell window:
+
+Syntax: executable [REM control file name] [optional arguments]
+
+optional arguments:
+-h for input arguments
+-H for more menu help
+
+!3 0 (REM control file)
+		{{ REM control file & options }}
+
+              1) file format #1
+              2) file format #2
+              3) conditions
+              4) smoothing to boost DOF
+              5) multiple-comparisons
+
+!3 1 (REM file format #1)
+		{ REM control file format #1 }
+An REM control file is the "top level" that defines the REM to be used for analysis.
+There are two different formats. The easiest format, and most often used, is given below.
+The first several lines describe options to used in the analysis, such as the conditions to be tested.
+Following initial options, list all subjects grouped into 1 or more "events" that identify the group.
+An example REM control file follows:
+
+              smoothing 0.5 1.5          # original 1st-level smoothing, & desired smoothing for DOF
+	      conditions p c pc p-c      # test pre-treated, control, sum and difference conditions
+	      subjects p                 # pre-treated group
+              ../pre-treat/subject1/glm/S-3.bfloat # Give a list of subjects/conditions from 1st-level GLM
+              ../pre-treat/subject2/glm/S-3.bfloat
+              ../pre-treat/subject3/glm/S-3.bfloat
+	      ../..                      # and so on for all subjects in the group
+	      subjects c                 # control group
+              ../control/subject1/glm/S-3.bfloat # Give a list of subjects/conditions from 1st-level GLM
+              ../control/subject2/glm/S-3.bfloat
+              ../control/subject3/glm/S-3.bfloat
+	      ../..                      # and so on for all subjects in the group
+
+Optionally, each subject entry can be scaled differently. This can be useful, for instance, to correct
+for loss of exogenous contrast agent from the blood when averaging across runs instead of subjects:
+
+              ../run1/glm/S-1.bfloat 0.92   # Here, each scale factor is -ln(S_average/S0), where
+              ../run2/glm/S-1.bfloat 0.80   # S0 and S_average are found from the same large brain region,
+              ../run3/glm/S-1.bfloat 0.79   # S0 represent pre-IRON signal, and S_average is found from
+              ../run4/glm/S-1.bfloat 0.70   # the "average" file produced by the 1st-order GLM
+
+Alternatively, one might try to scale sessions by a behavior, or combine analyses from different drug
+infusions assuming some scaling.
+
+!3 2 (REM file format #2)
+		{ REM control file format #2 }
+While the 1st type of file format for REM control files is the most simple and tranparent, the first
+format lacks the ability to use multiple regressors to describe data from a single group of entries.
+One might imagine, for instance, that entries for each "event" do not correspond to subjects, but to
+repeated measurements within a subject. In such a case, one can apply counting labels (0,1,2,...) to
+all the entries in the analysis and then specify events based upon the counting labels. This format
+is both more complicated and less generally useful than the first format. Obtaining significance is
+difficult when using two or more regressors to describe a series of entries in a random-effects analysis.
+The following file assumes two subjects (a & b) and uses two regressors (a,b = constant, A,B = ramp)
+to describe results (presumably time-ordered) within each subject.
+
+smooth 2 6
+conditions a b A B aA bB ab AB aAbB
+
+event a square
+0 19
+
+event A ramp
+0 19
+
+event b square
+20 39
+
+event B ramp
+20 39
+
+measurements:
+
+subject-a/session1/BOLD-1.bfloat  # 0
+subject-a/session2/BOLD-1.bfloat  # 1
+subject-a/session3/BOLD-1.bfloat  # 2
+...                               # ... and so on
+subject-a/session20/BOLD-1.bfloat # 19
+subject-b/session1/BOLD-1.bfloat  # 20
+subject-b/session2/BOLD-1.bfloat  # 21
+subject-b/session3/BOLD-1.bfloat  # 22
+...                               # ... and so on
+subject-b/session20/BOLD-1.bfloat # 39
+
+
+!3 3 (conditions)
+		{ REM control file: conditions }
+
+Multiple conditions are listed together with one or more spaces separating them: "conditions p c pc p-c".
+These conditions are specified identically to the 1st-order GLM.  Refer to the documentation for jip-glm
+for more information.
+
+!3 4 (smoothing)
+		{ REM control file: smoothing }
+Using the Worseley method, smoothing boosts the degrees-of-freedom by combining information about
+error from adjacent voxels. The degree of smoothing provides a sliding level that biases an analysis
+towards a random-effects one (no smoothing) or a mixed-effects one. Note that smoothing in this context
+does not imply the loss of spatial resolution that would accompany smoothing of "activation". In this
+method, smoothing is applied not to the contrast, but to the noise. More specifically, smoothing is
+applid to the ratio of the random to fixed variances under the assumption that they have similar spatial
+distributions, so that information from the fixed-effects variance can usefully inform the random-effects
+variance. In generating statics, which depend upon the contrast-to-noise ratio and the degrees-of-freedom,
+smoothing alters the variance and degrees of freedom, but not the contrast.
+
+!3 5 (multiple-comparisons)
+		{ REM control file: multiple-comparisons }
+Raw p values are converted to corrected p values for multiple comparisons using the same method as
+for the 1st-order GLM.  The argument is the number of "resels", or resolution elements, which may
+differ significantly from the number of voxels as a consequence of steps like smoothing (decreases
+independent resels) and registration to a new coordinate/voxel space (may increase or decrease resels).
+By default, raw p values are reported (equivalent to "multiple-comparisons 0").
+Note that random-effects (no smoothing to increase the degrees of freedom) or mixed-effects analses
+are more conservative than fixed-effects analyses (1st level GLM only), and this generally is a good
+idea for a number or reasons. A random-effects analysis with strict control for multiple comparisons
+will require a very large number of entries ("subjects", generally) in the analysis. This type of
+analysis may be overly conservative, particularly when map-based analyses are used primarily to inform
+region-of-interest based analyses.
+
+!4 0 (interface with xd)
+		{{ interface with jip-display }}
+
+To view the results of the analysis:
+   xd -r rem.dat       ... where rem.dat is the name of the control file.
+Generally, one will want anatomy to view the results.
+Exclude the anatomy volumes from the analysis in the same way as for the 1st-level GLM:
+   xd -r rem.dat -e anatomy.nii
+
+To output region-of-interest data,
+1) apply an overlay (predefined or interactively defined),
+2) bring up the graph display,
+3) click on "R" on the bottom of the graph window.
+
+Output will go to file ".roi".

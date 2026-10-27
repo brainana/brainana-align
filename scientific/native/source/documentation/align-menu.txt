@@ -1,0 +1,237 @@
+!0 0
+                 Alignment program: MAIN MENU
+              1) input options from shell window
+              2) how affine alignment works
+              3) how non-linear warping works
+              4) file formats
+	      5) filters to facilitate accurate alignment
+	      6) alignment templates
+	      7) alignment suggestions
+
+!1 0 (input options from shell window)
+>align-startup.txt
+
+!2 0 (how affine alignment works)
+	      {{ Alignment methodology: affine }}
+Affine alignment performs a set of 1-dimensional searches along each coordinate dimension (12 total),
+and uses parabolic interpolation to find the best increments on each axis ("increment vector").
+The change in cost function for each dimension is converted to an n-dimensional unit vector ("unit cost
+vector"), and the alignment increment in each direction is computed as the projection of the increment
+vector on the unit cost function vector. This procedure is repeated at progressively finer resolution
+in the starting increments.
+
+!3 0 (how non-linear alignment works)
+	      {{ Alignment methodology: non-linear }}
+Non-linear warping uses the existing recursively refined, piecewise-linear control-grid basis
+(tensor products of the 1-dimensional sampled basis functions), not cosine-squared or cubic
+B-spline functions. Each coefficient controls one component of the displacement field.
+The original axis probes and gain-weighted combined search direction are retained. A combined
+proposal is now evaluated against the real objective, backtracked as needed, and rejected if
+it does not improve the score or violates the sampled deformation constraints.
+The similarity term is mutual information (MI) or uncentered normalized correlation (NC),
+with a distortion penalty (regularization term):
+  cost = similarity - (lambda^2 / 10) * penalty
+where lambda = "rigidity" on the GUI, and the penalty is a function of the
+distortion fields.  Currently, the penalty term can take two forms or an admixture of the two:
+1) "bending energy", the square of curvature:
+         penalty = f * deriv2^2 * res^2 / [res^2 + deriv1^2]^3/2
+    where
+         deriv1, deriv2 are 1st and 2nd derivatives of distortion fields
+         res is image resolution (i.e., mm per pixel)
+         f is a fraction (0, 0.25, 0.50, 0.75, 1.) that can be adjusted on the GUI.
+2) Alternatively (or additionally, depending on the value of f):
+         penalty = (1-f) * ( (deriv1/res)^2 )^2
+
+The 1st term above produces the smoothest distortion fields because it depends to first order only on the
+second derivative. However, there is no guarantee that a smooth field is valid in the sense of having first
+derivatives that are small enough so that neighboring voxels don't over-shift one another. The second term,
+on the other hand, limits the relative shift of neighboring voxels but does not produce the same amount of
+smoothness as the first term. A reasonable setting appears to be 50/50 admixture of the two terms, set on
+the GUI by locating the "x" slider on the non-linear panel at a position half-way between "smooth" (1st term)
+and "stiff" (2nd term).
+
+The validity check now differentiates the full pull map T(x)=A*x+u(x), including the affine
+linear part A. Its reported Jacobian is relative to the starting affine:
+  Jrelative = det(A + Du) / det(A).
+The default Jacobian limit is 2, so relative determinants must stay between 0.5 and 2.
+All sampled grid locations, including masked-out voxels and outer planes, are checked.
+Nonfinite maps and singular affines are invalid. A reflected starting affine retains its
+baseline parity; newly introduced local folding is rejected. These sampled checks do not
+prove global invertibility or guarantee that there are no folds between samples.
+Increasing regularization can help recover a field that already violates the limits.
+
+Registration coordinates remain centered target/source axes in millimeters. They are not
+raw NIfTI RAS coordinates. The full native voxel affine is stored separately in new align.com
+files and in default NIfTI sform output, preserving oblique/sheared grid metadata without
+applying that affine twice. Displacement components retain their centered source-axis meaning.
+Inverse registration solves the full affine-plus-field map and reports unsolved/outside samples
+as zero; it rejects sampled folds, singular maps and nonfinite displacement data.
+See nonlinear-fixes-1.md for validation, conventions and remaining limitations.
+
+!4 0 (file formats)
+>file-format-menu.txt
+
+!5 0 (filters)
+	      {{ filters }}
+
+Currently, there are two image filters to facilitate image registration:
+
+roll-off filter
+---------------
+Image registration is based upon comparisons of intensity. Even using probability cost functions like
+mutual information, intensity variations that are unrelated to anatomy will blur comparisons across
+image volumes.  The most common source of intensity variation is inhomogeneity in the RF field due to
+coil position and design.  For instance, use of a single transmit/receive loop coil on a rodent results
+in images that have much less signal at the bottom of the brain relative to the top.  Use of phased-array
+receive coils in primates produces images with bright cortical signal but weaker signal near the center
+of the brain.  One way to correct such variations would be fit for a "bias field" during the registration
+procedure; some registration programs use that method.
+  The jip registration program uses a fast and simple method that works well in most circumstance. Images
+are divided by a heavily smoothed version of themselves, so that long range intensity variations are removed
+but anatomical features generally are preserved. An appropriate filter width typically is about 1/4 of
+the field of view or so; this value is suggested as the default.
+  Use the up/down arrows to navigate to the "rolloff" field on the alignment parameters setup page, and then
+use the left or right arrow to invoke a query about the filter width.
+
+overlay filter
+--------------
+Brain registration always works best when extra-cerebral tissue is removed from the process. By using a
+standarized template, you can define one brain overlay that can be used to remove extra-cerebral tissue
+by the overlay filter.  Load your overlay at startup:
+   alias align ~jbm/jip-current/bin/align -t mypath/mytemplate.bshort -o mypath/brain-mask.dat
+   align individual.bshort
+The file brain-mask.dat should contain at least the brain overlay (as below):
+    brain mypath/brain.ovl yellow
+Alternatively, you can read a file named ".ovl" using the "r" key or button, but the method suggested above
+is less hassle in the long run.
+When an overlay is loaded, navigate to the "overlay" field on the alignment parameters setup page using the
+up/down arrows, and then apply the overlay using either the left or right arrow. After the overlay is applied,
+the template and the corresponding voxels in the individual will be set to zero, so that alignment will occur
+only based upon brain tissue. If you want to remove this mask, use the left or right arrow on the "overlay"
+field again and the mask will be deleted (e.g., you will see all voxels that are non-zero in the template
+volume).
+
+!6 0 (alignment templates)
+	      {{ alignment templates }}
+
+Atlases are located in the directory /homes/1/jbm/space-spot/atlases, which is called $Atlases below.
+
+	      1) mouse atlas & template
+	      2) rat atlas & templates
+	      3) monkey template
+
+!6 1 (mouse atlas & template )
+	      { mouse atlas & template }
+
+Allen mouse brain atlas (www.brainmap.org)
+------------------------------------------
+The Allen brain atlas can be found at
+    $Atlases/Allen-mouse/atlas/Allen-mouse-atlas-125x125x250.bshort
+"Fake rat brains" based upon this atlas can be used as a basis for aligning MR images to this atlas:
+    $Atlases/Allen-mouse/atlas/fake-mouse-125x125x125/fake-rare-125x125x125.bfloat
+    $Atlases/Allen-mouse/atlas/fake-mouse-250x250x250/fake-rare-250x250x250.bfloat
+
+LONI minimum deformation atlas (MDA)
+------------------------------------
+The Laboratory of NeuroImaging (LONI) at UCLA distributes software and MRI templates, including a mouse
+Miniumum Deformation Atlas (MDA).  See www.loni.ucla.edu/Atlases
+I downloaded the MDA atlas and registered it to the space of the Allen brain atlas using jip alignment
+software. The resulting MDA mouse brain can be at three different resolutions at location
+    $Atlases/Allen-mouse/mri
+
+!6 2 (rat atlas & templates )
+	      { rat atlas & templates }
+For alignment within MGH, the Paxinos-Watson rat brain atlas can be used. For alignment outside MGH, you'll
+have to purchase a CDROM of the atlas and convert the image files to a suitable format by yourself. The
+publishers would not agree to allow redistribution of the atlas in any form, even in a low-resolution version
+that probably would spur their sales further if available.
+
+
+!6 3 (mouse template )
+	      { monkey template }
+A brain template from the average of 112 rhesus monkeys using T1 & T2 contrast was published in 2009:
+	(McLaren et al., NeuroImage 2009:45;52-59); www.brainmap.wisc.edu/monkey
+The template brain was aligned to the space of Saleem & Logothetis 2006 in order to facilitate comparisons
+with histology.
+I downloaded the template brains and performed some modifications (e.g., trimming of the field of view)
+to facilitate the use of this template for image registration.  The coordinate system was preserved to
+maintain the same space as the original template the the Saleem/Logothetis atlas. All atlases can be found at
+	     /homes/1/jbm/space-spot/atlases
+The monkey atlas can be found under the "Wisconsin-monkey" sub-directory.
+
+!7 0 (alignment suggestions )
+	      {{ alignment suggestions }}
+
+                 Alignment suggestions
+              1) general
+              2) affine/linear registration
+	      3) non-linear warping
+
+!7 1 (alignment suggestions: general)
+	      { general alignment suggestions }
+
+Image registration is based upon contrast. If you don't have enough contrast, you can expect sub-optimal
+results. In humans and monkeys, anatomical templates usually employ T1-weighted imaging using a sequence
+like MPRAGE. Rodents have less white matter, so T2-weighted spin-echo sequences (e.g., RARE) provide good
+contrast. Optionally, contrast-enhanced imaging using agents like MION provide good contrast for by wiping out
+signal in the vasculature. For IRON fMRI using exogenous agent, the template for an individual animal can be
+formed directly from an average over all or part of the fMRI time series.
+
+If you have poor contrast (e.g., BOLD images), you should avoid the multi-resolution approach in the alignment
+tool.  In this multi-resolution approach, coarse alignment is done on down-sampled images prior to using
+the full image resolution.  This approach can significantly speed up registration, but it produced poor results
+if the automated process wanders too far away from the global minimum during this stage. Under such conditions,
+most standard alignment packages seem to produce poor results (my experience). The best strategy for poor
+contrast is to avoid down-sampling and always work with full resolution.
+
+You should select an image template and use it for your whole series of subjects within a study. Better yet,
+use a standardized template from the literature. Templates provide obvious advantages in terms of localizing
+anatomy and standardizing a space for scientific reporting.
+
+!7 2 (alignment suggestions: affine)
+	      { Affine alignment suggestions }
+
+When contrast is good and there are lots of slices, alignment is easy.  Use the rolloff filter to correct
+for differences in RF bias, and use the overlay filter to eliminate signal outside the brain; this last step
+is not necessary if the template volume consists only of brain signal.  In general, the only reason to use
+the multi-resolution approach is when the image volumes are quite large, so the alignment takes a long time.
+There is no advantage to the multi-resolution approach except for speed.
+
+Sometimes it makes sense to restrict the set of alignment parameters.  Here are two such cases:
+1) You have lousy single-shot EPI images in a rodent, but you had the foresight to take some quick
+    antamical (e.g., RARE, MPRAGE) images of the same slices.  The procedure then may be
+   i) Align the RARE images to a standard template, using the standard filters as always.
+  ii) Create a registered version of the RARE images using jip.
+ iii) Align the EPI images to the registered RARE images using the standard overlay filter for the template.
+      To eliminate shifts in the slice direction, which may occur as a result of poor contrast, de-select
+      the "z" and "scale-z" parameters during the alignment process.
+2) You aligned distorted single-shot images to an individual or cross-subject template using the x/y
+   distortion fields, but there are shifts in the EPI images between runs due to gradient heating (an issue
+   that is not uncommon for small bore systems).
+   i) For each run, recall the alignment parameters including the distortion fields.
+  ii) Since EPI shifts primarily in the phase-encode direction, select only the appropriate direction
+      (e.g., y) and correct in 1D for each run.
+   Of course, 1-dimensional motion correction prior to registration would obviate this issue.
+
+!7 3 (non-linear alignment suggestions: non-linear)
+	      { Non-linear alignment suggestions }
+
+Non-linear alignment involves a tradeoff two criteria:
+	1) an objective criteria describing how well an image matches a template, &
+	2) a subjective criteria describing how "reasonable" is the solution.
+
+OBJECTIVE criteria:
+The first criteria is specified by a cost function, which is either maximized
+or minimized in order to optimize the matching quality between the target (template)
+and source (individual). The cost function used here is mutual information, which does enable
+very high speed in alignment, but it does enable alignment across contrast types
+(e.g., distorted fMRI data can be aligned directly to anatomical data based upon T1 contrast).
+
+SUBJECTIVE criteria:
+The subjective criteria is "reasonableness", meaning that distortion fields should be smooth,
+expansion/contraction should not be excessive, and the degrees of freedom should be small compared
+to the number of voxels. In this program using default values of rigidity, fields are relatively
+smooth. The default relative Jacobian range is 0.5 to 2; it is configurable. The usual
+coarse-to-fine sequence finishes at grid setting 2. A separate explicit grid setting 1 is supported. Decreasing rigidity or increasing
+the number of basis functions generally will improve the image matching criteria further,
+but the distortion fields may be less reasonable.

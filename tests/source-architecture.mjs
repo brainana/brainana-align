@@ -3,31 +3,15 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
-const src = path.join(root, 'source', 'src')
-const requiredModules = [
-  'app/bootstrap.ts', 'app/types.ts',
-  'domain/registration/rigid.ts', 'domain/registration/linear.ts', 'domain/registration/automaticLinear.ts', 'domain/registration/nonlinear.ts', 'domain/registration/deformable.ts', 'domain/imaging/roiWarp.ts',
-  'domain/optimization/windows.ts', 'domain/sessions/persistence.ts',
-  'domain/export/artifacts.ts',
-  'viewer/interaction.ts', 'viewer/coordinateProjection.ts',
-  'viewer/crosshairController.ts', 'viewer/landmarkRenderer.ts',
-  'viewer/optimizationWindowInteraction.ts',
-  'infrastructure/runtime/client.ts', 'infrastructure/runtime/integration.ts',
-  'infrastructure/runtime/desktopApi.ts',
-  'infrastructure/remote/filesystemClient.ts', 'infrastructure/remote/volumeLoader.ts',
-  'infrastructure/remote/endpoint.ts', 'infrastructure/remote/electronIntegration.ts',
-  'ui/workstationBrowser.ts', 'ui/exportDestination.ts', 'ui/linearRegistrationControls.ts', 'ui/nonlinearLandmarkControls.ts', 'ui/workflowNavigation.ts',
-]
-for (const file of requiredModules) {
-  assert.ok(fs.existsSync(path.join(src,file)), `missing layered source file ${file}`)
+const src = path.join(root, 'apps/align', 'src')
+for (const file of ['appTypes.ts','optimizationWindows.ts','viewInteraction.ts','coordinateProjection.ts','crosshairController.ts','landmarkRenderer.ts','sessionPersistence.ts','exportArtifacts.ts','runtimeClient.ts','filesystemClient.ts','remoteVolumeLoader.ts','workstationBrowser.ts','exportDestination.ts','optimizationWindowInteraction.ts','landmarkList.ts']) {
+  assert.ok(fs.existsSync(path.join(src,file)), `missing modular source file ${file}`)
 }
-for (const obsolete of ['main.ts', 'appTypes.ts', 'runtimeIntegration.ts', 'filesystemClient.ts']) {
-  assert.ok(!fs.existsSync(path.join(src, obsolete)), `flat source module must not return: ${obsolete}`)
+const main = fs.readFileSync(path.join(src,'main.ts'),'utf8')
+for (const module of ['optimizationWindows','viewInteraction','coordinateProjection','crosshairController','landmarkRenderer','sessionPersistence','exportArtifacts','optimizationWindowInteraction','landmarkList']) {
+  assert.match(main, new RegExp(`from './${module}'`), `main.ts must use ${module}`)
 }
-const main = fs.readFileSync(path.join(src,'app','bootstrap.ts'),'utf8')
-for (const module of ['domain/optimization/windows','viewer/interaction','viewer/coordinateProjection','viewer/crosshairController','viewer/landmarkRenderer','domain/sessions/persistence','domain/export/artifacts','viewer/optimizationWindowInteraction']) {
-  assert.ok(main.includes(module), `application bootstrap must use ${module}`)
-}
+assert.doesNotMatch(main, /landmarkList\.innerHTML|class="landmark-head"/)
 assert.doesNotMatch(main, /function withinOptimizationWindows/)
 assert.doesNotMatch(main, /function installWheelZoomAndSlice/)
 assert.doesNotMatch(main, /function markerDepthDistance/)
@@ -37,13 +21,10 @@ assert.doesNotMatch(main, /function geometryDifference/)
 assert.doesNotMatch(main, /function matrixText/)
 assert.doesNotMatch(main, /frac2canvasPos\(nv\.mm2frac\(point\)\)/)
 const lines = main.split('\n').length
-const codeLines = main.split('\n').filter(line => line.trim()).length
-// The global linear workflow adds its panel orchestration here while all search,
-// parameterization, and diagnostics remain isolated in automaticLinear.ts.
-assert.ok(codeLines < 1550, `application bootstrap exceeded the current guarded baseline: ${codeLines} nonblank lines`)
-console.log(`layered source architecture checks passed (${lines} total, ${codeLines} nonblank lines in application bootstrap)`)
+assert.ok(lines < 1050, `main.ts remains too large after refactor: ${lines} lines`)
+console.log(`source architecture checks passed (${lines} lines in main.ts)`)
 
-const runtimeIntegration = fs.readFileSync(path.join(src,'infrastructure','runtime','integration.ts'),'utf8')
+const runtimeIntegration = fs.readFileSync(path.join(src,'runtimeIntegration.ts'),'utf8')
 assert.ok(runtimeIntegration.includes('installExportDestination'), 'runtimeIntegration must compose export destination module')
 assert.ok(runtimeIntegration.includes('createWorkstationBrowser'), 'runtimeIntegration must compose workstation browser module')
 for (const forbidden of ['server-browser-modal','ba-export-panel','/api/save-file','/api/file?path=']) {
@@ -51,7 +32,7 @@ for (const forbidden of ['server-browser-modal','ba-export-panel','/api/save-fil
 }
 console.log('runtime integration architecture checks passed')
 
-const server = fs.readFileSync(path.join(root,'source','server.mjs'),'utf8')
+const server = fs.readFileSync(path.join(root,'packages/core-server','runtime.mjs'),'utf8')
 assert.match(server, /from '\.\/sftpClient\.mjs'/)
 for (const forbidden of ['stat -c %s','find ${','/usr/bin/scp',' cat ${']) assert.ok(!server.includes(forbidden), `server must not use remote shell transport: ${forbidden}`)
 console.log('structured SFTP architecture checks passed')
@@ -63,7 +44,17 @@ if (launcherSource.includes("randomBytes(32)") || launcherSource.includes('SESSI
 if (!launcherSource.includes('--handshake-file "$HANDSHAKE_FILE"')) {
   throw new Error('Launcher must use the server-owned atomic handshake file')
 }
-const serverSource = fs.readFileSync(path.resolve(root, 'source/server.mjs'), 'utf8')
+const serverSource = fs.readFileSync(path.resolve(root, 'packages/core-server/runtime.mjs'), 'utf8')
 if (!serverSource.includes("crypto.randomBytes(32).toString('hex')") || !serverSource.includes('sessionToken,')) {
   throw new Error('Server must generate and publish the per-launch session token')
 }
+
+// Every viewer uses the same physical-slice safety boundary; registration modules
+// cannot own graphics or camera policy.
+for(const name of ['sliceCrosshairs.ts','viewZoom.ts'])assert.ok(fs.existsSync(path.join(src,name)))
+assert.equal((main.match(/new Niivue\(/g)||[]).length,2)
+assert.equal((main.match(/installSliceCrosshairs\(nv\)/g)||[]).length,2)
+for(const file of ['linearDefaults.ts','automaticRegistrationUI.ts','jipRegistrationUI.ts','itkRegistrationUI.ts'])assert.doesNotMatch(fs.readFileSync(path.join(src,file),'utf8'),/from ['"]\.\/(?:sliceCrosshairs|viewZoom|viewInteraction)['"]|\.drawCrosshairs3D|\.pan2Dxyzmm/)
+console.log('Viewer input/drawing isolation and nine-pane adapter composition passed')
+
+assert.equal((main.match(/observeProjectionDraw\(nv,/g)||[]).length,2,'Source and review marker overlays must follow completed projection draws')

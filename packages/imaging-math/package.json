@@ -1,0 +1,13 @@
+{
+  "name": "@brainana/imaging-math",
+  "version": "0.18.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./*": "./*"
+  },
+  "dependencies": {
+    "nifti-reader-js": "^0.8.0",
+    "fflate": "^0.8.2"
+  }
+}

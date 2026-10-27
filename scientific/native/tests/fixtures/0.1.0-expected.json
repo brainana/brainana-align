@@ -1,0 +1,85 @@
+{
+  "source_engine_version": "0.1.0",
+  "old_executable_sha256": "892c514a6c6b818a938991c58d81fa19b6c90e958ddf995433f974dddf0a0a92",
+  "checkpoint_sha256": "0b4c10b6615635fb7fadb44c8a02a607c4f3bf27ec7a9a2c925f208f51e77815",
+  "cases": [
+    {
+      "continue": false,
+      "outputs": {
+        "image": {
+          "data_sha256": "5e6b3d0e0ce99729052d9e4ac8f8db545ddc9379da60b0192b9d8581b9b7a194",
+          "native_affine": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.5,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            2.0,
+            0.0
+          ]
+        },
+        "-field": {
+          "data_sha256": "c7221e18bb89c6db73498589db98599bba5ff47d29cf09b3b4958ea89ab94d62",
+          "native_affine": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.5,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            2.0,
+            0.0
+          ]
+        }
+      }
+    },
+    {
+      "continue": true,
+      "outputs": {
+        "image": {
+          "data_sha256": "29e3543d0dfb2ad0fd719dfeaec419384da62c18aa9f6da5bb9478a15baa8551",
+          "native_affine": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.5,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            2.0,
+            0.0
+          ]
+        },
+        "-field": {
+          "data_sha256": "6100baa9366dafac9d252d67e7a35c73293e31068a026fca884fd72deaa1b430",
+          "native_affine": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.5,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            2.0,
+            0.0
+          ]
+        }
+      }
+    }
+  ]
+}

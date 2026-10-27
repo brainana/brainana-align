@@ -1,0 +1,19 @@
+To create libraries for a given machine type,
+
+From this directory:
+make clean
+make util
+make io
+make jipfit
+
+Determine the OS and the machine type from unix/Linux:
+unix% uname -s
+Linux
+unix% uname -m
+i686
+
+MAKE A DIRECTORY FOR THIS OS/MACHINE IF ONE DOES NOT EXIST: "OS-machine"
+unix% mkdir Linux-i686
+
+COPY OR MOVE THE LIBRARIES INTO THIS DIRECTORY:
+mv lib*.a Linux-i686

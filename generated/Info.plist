@@ -13,10 +13,12 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>0.17.26-workflow-ui.1</string>
+	<string>0.18.0</string>
+	<key>BrainanaReleaseVersion</key>
+	<string>0.18.0</string>
 	<key>CFBundleVersion</key>
-	<string>17261</string>
+	<string>17262</string>
 	<key>LSMinimumSystemVersion</key>
-	<string>11.0</string>
+	<string>14.0</string>
 </dict>
 </plist>

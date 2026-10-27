@@ -3,7 +3,7 @@ import json, os, signal, subprocess, tempfile, time, urllib.request
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 NODE=os.environ.get('NODE','node')
-SERVER=ROOT/'source'/'server.mjs'
+SERVER=ROOT/'apps/align'/'server.mjs'
 
 def launch(base: Path):
     data=base/'data'; cache=base/'cache'; hs=base/'handshake.json'; err=base/'error.txt'; log=base/'server.log'

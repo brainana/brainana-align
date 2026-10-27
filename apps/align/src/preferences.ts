@@ -1,0 +1,37 @@
+export const THEME_KEYS=['bg','panel','panel-2','text','muted','accent','accent-2','accent-ink','elev','border-2','danger','warn'] as const
+export type ThemeColors=Record<typeof THEME_KEYS[number],string>
+export const THEMES:Record<string,ThemeColors>={
+ amber:{bg:'#14120d',panel:'#1c1913','panel-2':'#241f17',text:'#ece6d8',muted:'#a1957f',accent:'#e6a13a','accent-2':'#f4c877','accent-ink':'#241700',elev:'#2e2818','border-2':'#3a3221',danger:'#e5675a',warn:'#d9a24c'},
+ dark:{bg:'#11151a',panel:'#1b2128','panel-2':'#242c35',text:'#edf2f7',muted:'#a4b2c0',accent:'#70b9ff','accent-2':'#a2d3ff','accent-ink':'#081d30',elev:'#303d4b','border-2':'#465463',danger:'#ff8b83',warn:'#f3c66b'},
+ light:{bg:'#e8edf2',panel:'#f7f9fb','panel-2':'#ffffff',text:'#182432',muted:'#526171',accent:'#145c95','accent-2':'#145c95','accent-ink':'#ffffff',elev:'#dce7f1','border-2':'#a5b4c2',danger:'#a12420',warn:'#825300'},
+ contrast:{bg:'#000000',panel:'#090909','panel-2':'#151515',text:'#ffffff',muted:'#dddddd',accent:'#ffdf00','accent-2':'#ffed80','accent-ink':'#000000',elev:'#242424','border-2':'#999999',danger:'#ff9999',warn:'#ffdf00'},
+}
+export type Preferences={schemaVersion:1;appearance:{theme:string;colors:ThemeColors;scale:number;largeTargets:boolean};display:{mode:'falsecolor'|'opacity';opacity:number;fixedColor:string;movingColor:string;mriCrosshair:string;ctCrosshair:string;crosshairWidth:number;crosshairVisible:boolean;markerSize:number;markerLabels:boolean};interaction:{linked:boolean;reverseScroll:boolean;scrollSensitivity:number};guide:{firstLaunch:boolean;dock:boolean;remember:boolean};registration:{model:'rigid'|'similarity'|'anisotropic'|'affine';preset:'tight'|'standard'|'custom';translationLimit:number;rotationLimit:number;translationStep:number;rotationStep:number};saving:{autosave:boolean;interval:number;rememberLayout:boolean}}
+export const DEFAULT_PREFERENCES:Preferences={schemaVersion:1,appearance:{theme:'amber',colors:{...THEMES.amber},scale:1,largeTargets:false},display:{mode:'falsecolor',opacity:55,fixedColor:'#00ff00',movingColor:'#ff00ff',mriCrosshair:'#40d9ff',ctCrosshair:'#ffb326',crosshairWidth:1,crosshairVisible:true,markerSize:1,markerLabels:true},interaction:{linked:true,reverseScroll:false,scrollSensitivity:1},guide:{firstLaunch:false,dock:false,remember:true},registration:{model:'rigid',preset:'standard',translationLimit:5,rotationLimit:10,translationStep:2,rotationStep:1},saving:{autosave:true,interval:30,rememberLayout:false}}
+export function normalizePreferences(input:unknown):Preferences{
+ const defaults=structuredClone(DEFAULT_PREFERENCES);if(!input||typeof input!=='object')return defaults
+ const value=input as any;if(value.schemaVersion!==undefined&&value.schemaVersion!==1)throw new Error('Unsupported settings version.')
+ for(const group of ['appearance','display','interaction','guide','registration','saving'] as const){const src=value[group];if(!src||typeof src!=='object')continue;for(const key of Object.keys(defaults[group])){if(key==='colors')continue;const fallback=(defaults[group] as any)[key],candidate=src[key];if(typeof candidate===typeof fallback)(defaults[group] as any)[key]=candidate}}
+ for(const key of THEME_KEYS){const color=value.appearance?.colors?.[key];if(typeof color==='string'&&/^#[0-9a-f]{6}$/i.test(color))defaults.appearance.colors[key]=color}
+ const clamp=(v:number,min:number,max:number,fallback:number)=>Number.isFinite(v)?Math.max(min,Math.min(max,v)):fallback
+ if(!['amber','dark','light','contrast','custom'].includes(defaults.appearance.theme))defaults.appearance.theme='custom'
+ defaults.appearance.scale=clamp(defaults.appearance.scale,.85,1.5,1)
+ for(const key of ['fixedColor','movingColor','mriCrosshair','ctCrosshair'] as const)if(!/^#[0-9a-f]{6}$/i.test(defaults.display[key]))defaults.display[key]=DEFAULT_PREFERENCES.display[key]
+ defaults.display.opacity=clamp(defaults.display.opacity,0,100,55);defaults.display.crosshairWidth=clamp(defaults.display.crosshairWidth,1,5,1);defaults.display.markerSize=clamp(defaults.display.markerSize,.75,2,1);defaults.interaction.scrollSensitivity=clamp(defaults.interaction.scrollSensitivity,.25,4,1);defaults.saving.interval=clamp(defaults.saving.interval,10,300,30)
+ if(!['falsecolor','opacity'].includes(defaults.display.mode))defaults.display.mode='falsecolor'
+ if(!['rigid','similarity','anisotropic','affine'].includes(defaults.registration.model))defaults.registration.model='rigid'
+ if(!['tight','standard','custom'].includes(defaults.registration.preset))defaults.registration.preset='standard'
+ for(const key of ['translationLimit','rotationLimit','translationStep','rotationStep'] as const)defaults.registration[key]=clamp(defaults.registration[key],.05,key.startsWith('rotation')?180:500,DEFAULT_PREFERENCES.registration[key])
+ // Legacy settings remain readable, but panel expansion never carries into a new launch.
+ defaults.saving.rememberLayout=false
+ return defaults
+}
+declare global{interface Window{brainanaPreferences?:{read:(key:string)=>Promise<unknown>;write:(key:string,value:unknown)=>Promise<void>;chooseExportFolder?:()=>Promise<string|null>}}}
+export const preferenceStorage={async read(key:string):Promise<any>{if(window.brainanaPreferences)return window.brainanaPreferences.read(key);try{return JSON.parse(window.localStorage.getItem('brainana-align-'+key)??'null')}catch{return null}},async write(key:string,value:unknown){if(window.brainanaPreferences)return window.brainanaPreferences.write(key,value);window.localStorage.setItem('brainana-align-'+key,JSON.stringify(value))}}
+let current=structuredClone(DEFAULT_PREFERENCES)
+export const getPreferences=()=>current
+export function applyPreferenceTheme(p:Preferences){const root=document.documentElement;for(const key of THEME_KEYS)root.style.setProperty('--'+key,p.appearance.colors[key]);root.style.setProperty('--accent-glow',p.appearance.colors.accent+'29');root.style.setProperty('--ui-scale',String(p.appearance.scale));root.style.setProperty('--marker-font-size',`${13*p.display.markerSize}px`);root.style.setProperty('--marker-stroke',`${2*p.display.markerSize}px`);root.dataset.largeTargets=String(p.appearance.largeTargets);root.dataset.markerLabels=String(p.display.markerLabels);root.style.colorScheme=contrastRatio(p.appearance.colors.bg,'#000000')>8?'light':'dark';document.body.classList.toggle('guide-docked',p.guide.dock)}
+export async function initializePreferences(){try{current=normalizePreferences(await preferenceStorage.read('preferences'))}catch(error){current=structuredClone(DEFAULT_PREFERENCES);window.dispatchEvent(new CustomEvent('align-preferences-storage-error',{detail:error instanceof Error?error.message:String(error)}))}applyPreferenceTheme(current);return current}
+export async function savePreferences(p:Preferences){const next=normalizePreferences(p);await preferenceStorage.write('preferences',next);current=next;applyPreferenceTheme(current);window.dispatchEvent(new CustomEvent('align-preferences-changed',{detail:current}));return current}
+export function contrastRatio(a:string,b:string){const luminance=(hex:string)=>{const rgb=[1,3,5].map(i=>parseInt(hex.slice(i,i+2),16)/255).map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4);return rgb[0]*.2126+rgb[1]*.7152+rgb[2]*.0722};const x=luminance(a),y=luminance(b);return (Math.max(x,y)+.05)/(Math.min(x,y)+.05)}
+export const hexRGBA=(hex:string,alpha=1)=>[1,3,5].map(i=>parseInt(hex.slice(i,i+2),16)/255).concat(alpha) as [number,number,number,number]

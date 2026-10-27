@@ -1,0 +1,38 @@
+
+__________________________ARROWS_________________________________
+There are 4 dimensions (x, y, z, time), so there are 8 arrows: up, down, left, right, in (<), out (>),
+future (+) and past (-). Use these arrows to navigator through the data set.  Note that standard keyboards
+have "<>-+" in cap positions, but you can these keys without caps (",.-=").   Arrows are used contextually
+in the GUI based upon cursor location.
+Use the "?" function to interogate a region of the window for more information.
+
+__________________________BUTTONS________________________________
+There are 2 buttons: left and right. On a 3-button mouse, buttons 2 and 3 are equivalent. If there is a
+scroll wheel, it is used contextually; for instance, the scroll wheel moves in/out of the screen in 3-plane
+mode, but it acts like up/down arrows when used on the colorscale bar.
+Like arrows, the meaning of buttons depends upon context; use the "?" feature for further information.
+
+_______________________DISPLAY MODES_____________________________
+There are 2 basic display modes to accommodate the z or slice dimension: mosaic and tri-planar modes.
+Two switch between these displays, either use the text field on the right above the image window,
+or hit "3". IN 3-PLANE MODE, there Y-Z display orientation can be switched to accommodate rodent
+(x-y coronal) or primate (x-y axial) data. IN MOSAIC MODE, the configuration of panels can be changed
+(top right text field "#") and the number of slices in the mosaic can be set or selected.
+
+__________________________GRAPHS_________________________________
+There are 5 graph types: x, y, z, time, and histogram. A graph window appears when one uses the "g" button
+or key. When more than 5 images are loaded, the default graph is time. Switch between graphs using the
+top right text field on the graph window. The only current model for time graphs is the General Linear Model.
+
+____________________OVERLAYS & WIRE FRAMES_______________________
+There are two ways to define regions of interest. "Overlays" are associated with voxel indices and are
+the basis for all averages across images (e.g., for time series analysis). "Wire frames" are based upon
+spatial coordinates and are useful for defining defining overlays (from a closed wire frame) and for
+visualization. Wire frames translate across different resolutions; overlays do not. Overlays and wire frames
+can be pre-loaded in lists on start-up using "-o" and "-w" options, or they can be defined interactively.
+Wire frames can be turned into overlays by filling them. Overlays cannot be turned into wire frames.
+
+_______________________COLOR BARS________________________________
+Color bars depict "activation" or some other voxel-based quantity in either linear or log units.
+Maps are loaded into the program on startup using either the "-a" or "-p" options. Using the "?" function,
+click on a colorbar for more information.

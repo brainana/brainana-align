@@ -4,10 +4,10 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
-const source = fs.readFileSync(path.join(root, 'source', 'src', 'ui', 'browserCapabilities.ts'), 'utf8')
-const interaction = fs.readFileSync(path.join(root, 'source', 'src', 'viewer', 'interaction.ts'), 'utf8')
-const main = fs.readFileSync(path.join(root, 'source', 'src', 'app', 'bootstrap.ts'), 'utf8')
-const exportDestination = fs.readFileSync(path.join(root, 'source', 'src', 'ui', 'exportDestination.ts'), 'utf8')
+const source = fs.readFileSync(path.join(root, 'packages/core-client', 'browserCapabilities.ts'), 'utf8')
+const interaction = fs.readFileSync(path.join(root, 'apps/align', 'src', 'viewInteraction.ts'), 'utf8')
+const main = fs.readFileSync(path.join(root, 'apps/align', 'src', 'main.ts'), 'utf8')
+const exportDestination = fs.readFileSync(path.join(root, 'apps/align', 'src', 'exportDestination.ts'), 'utf8')
 assert.match(source, /getContext\('webgl2'/)
 assert.match(source, /normalizeWheelDelta/)
 assert.match(source, /deltaMode === 1/)

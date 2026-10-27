@@ -1,0 +1,8 @@
+{
+  "source": "jip-performance-2026-10-21/source",
+  "platform": "macOS-26.7.1-arm64-arm-64bit-Mach-O",
+  "machine": "arm64",
+  "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin25.6.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin\n",
+  "fftw": "3.3.11",
+  "status": "Native Apple Silicon reference only; other OS and GPU execution NOT_RUN"
+}

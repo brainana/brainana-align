@@ -1,0 +1,9 @@
+The six launcher scripts now select only modern 64-bit build outputs.
+
+Set JIP_BUILD_DIR to the directory containing the rebuilt executables if it is
+not one of the nearby build/cmake, build/arm64, or build directories.
+Arguments and paths containing spaces are preserved. Archived Darwin/i686/Cygwin
+executables are never selected as a fallback. JIP_HOME may still be used by the
+tools for documentation lookup; it no longer controls binary selection here.
+
+Use the CMake build instructions in ../documentation/64bit-repair-2.md.

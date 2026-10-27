@@ -1,0 +1,71 @@
+# Engine reliability and registration-stage invariants
+
+The opaque C ABI is `jip_engine.h`. Original numerical bodies are shared with the legacy frontend in `shared/`. Do not fork an optimizer into the API bridge or silently substitute another metric/interpolator. `reference/affine/` contains six independently compiled legacy affine/combined results; the four original nonlinear full-search traces remain immutable.
+
+The 0.4.0 Jacobian loop resolves each checked low/high stencil index once per axis and reuses it across the three displacement components. Keep indices wide and preserve boundary handling, finite-value tests, division precision, determinant arithmetic order and per-voxel writes. This is an integer-index reuse optimization, not a changed topology test. Full trace/real-data checkpoint parity is required after touching it. Optional N4 preprocessing lives outside the numerical engine in `preprocessing/`; its mask estimates a shading field and must never be interpreted as an instruction to register or crop an image. N4 presets are provisional and use physical units. Record all overrides and actual estimation geometry; do not call them optimized for every macaque dataset based on one EPI case.
+
+The 0.5.0 resampler hoists source-plane/row bounds checks and wide row offsets, reuses the checked destination index, and clips the nonwrapped x-neighbor interval once. Do not move, regroup, vector-reduce, truncate or approximate the original float coefficient products or double accumulation. Valid taps must remain in z/y/x order; invalid taps originally added nothing. Wrapped axes retain the original single-period adjustment, including rejection of taps still outside afterward. Local updates must clear every touched target voxel while preserving untouched voxels. Source-zero nearest-neighbor gating, coefficient normalization, Lanczos/Gaussian selection and temporary matrix restoration are invariants. No persistent coordinate/weight caches are introduced.
+
+Before narrowing derived widths/coordinates, check the representable legacy int range and use wide intermediates for tap bounds. Float comparisons to INT_MAX must promote to double, because INT_MAX is not exactly representable in float. Coordinate values outside that range cannot contribute to the source and are skipped safely; unrepresentable kernel lengths fail with JIP_INVALID in the guarded API. This limits the kernel's coordinate representation, not volume bytes or the wide source/destination array offsets. Do not reintroduce a 2 GiB volume cap.
+
+`tests/fixtures/resampler-0.4.0.inc` is the immutable prior body for direct differential tests; its manifest is hash-checked. It is compiled only into dedicated verification/benchmark executables. Never regenerate it to make an optimization pass. `engine-resampler-equivalence` checks 1,024 combinations, full output bits (including stale/local regions), restored geometry and empty ownership, plus explicit safe outcomes for formerly undefined extreme arithmetic. Keep this separate from the frozen complete-optimizer traces and known-truth tests.
+
+## Stage wiring
+
+- Keep `jip_options` and existing enum values ABI-stable. Extended settings use `jip_config` with required `struct_size`; settings are immutable after creation. New fields need an explicitly versioned ABI policy rather than reading past an older caller's struct.
+- Affine `CostFunction=1` means the original NMI formula. Nonlinear `CostFunction=1` means uncentered NC. Switch the binding before each stage and restore the nonlinear metric afterward. Their numerical values are not comparable.
+- The public affine run uses original `action_auto_adjust_affine(2)` at full input resolution with the original hierarchical parameter selection. It is a local optimizer, not a new global orientation search. Model 6 freezes scales/shears; 9 also adjusts independent scales; 12 includes shear. Counts describe optimized parameters; supplied scale/shear outside that selection is retained, so the final full transform can still contain that prior scale/shear. Similarity-7 is not represented by the original optimizer.
+- Do not enable `action_auto_adjust_affine(1)` in a borrowed-input trial. Its target-resolution changes free/replace target buffers and would violate the immutable-input ownership contract. A future multiresolution adapter must own those buffers and restore the full fixed grid before committing, with new reference/failure tests.
+- `jip_engine_run` selects stages for one attempt; `jip_engine_register` uses the saved default. `completed_stages` records stages performed in the accepted state, not an instruction to rerun them. Affine and nonlinear together share one commit; cancellation after affine still rolls back the entire combined attempt.
+- `affine_objective` is the score at the end of the last affine stage. `nonlinear_objective` is evaluated for the current result with the nonlinear metric/penalty. They are separately named and must not be presented as one before/after metric.
+- A zero initial affine information score makes the legacy convergence ratio undefined. The engine reports a recoverable invalid-input/overlap error before that division. It does not change valid-input probe ordering or invent overlap.
+
+## Transaction and memory ownership
+
+Clone/release/ownership verification must be updated together when adding persistent state. Four image buffers (original fixed/moving, filtered moving and target) are borrowed read-only from the locked accepted context. The mutable resampled image, basis image, fields/Jacobian scratch, coefficient tables and basis matrices are copied and owned by the trial.
+
+Only the numerical struct prefix is copied; never memcpy live atomics, arena ownership or context-control state. No allocation, callback, numerical calculation or cancellation point is permitted after the ACTIVE-to-COMMITTING exchange. Recovery must be allocation-free. Never free an active accepted context. The caller still owns synchronization of handle lifetime and borrowed views.
+
+Keep guarded helpers privately named. Any new helper symbol needs inspection against `private_symbols.h` so linking an unguarded legacy core cannot bypass recovery. Do not force-include allocator macros into `engine_runtime.c` or third-party libraries. New vendor resources require cleanup registration before another fallible operation. Engine resource cleanup callbacks must not allocate, poll or throw.
+
+`invert_mat44` must free its temporary matrix on both exits. `engine-reliability` checks eleven fits on the same context and zero remaining tracked ownership. Do not replace this with create/destroy-only tests: they would miss cumulative retained temporaries.
+
+## Files and geometry
+
+Default nonlinear-only contexts retain `JIPCP001` output. Extended configuration or accepted affine stages use `JIPCP002`, with explicit little-endian configuration and affine hierarchy flags under the CRC. Both load paths must remain tested; older releases cannot read format 002. Configuration, first-affine flags, stage history and last affine score all affect restored behavior or reporting. Never serialize native C structs or pointers.
+
+Native voxel-to-mm matrices are separate from JIP centered-mm `A*x+u(x)` pull coordinates. Fields are sampled on the fixed grid. Preserve native matrices on export; do not treat them as an extra alignment or interpret centered fields as world/RAS forward displacements. Analytic accuracy fixtures use the actual `(dim-1)/2` voxel center, anisotropic spacing and different image grids. Test all voxel boundaries with one-sided derivatives as well as interior Jacobians.
+
+Outputs are staged per file, not as a group. A later field/metadata write error can follow an already published image. Keep this limitation visible to adapters. Failed loads return a new null handle and must never be assigned directly over the application's only existing handle.
+
+## Required verification
+
+Build all test targets, then run CTest with `--no-tests=error`. Inspect configure/build exit codes and test counts: an empty CTest match is not a passing validation run. Default bounded timeout is 180 seconds; sanitizer configurations can explicitly increase `JIP_TEST_TIMEOUT`.
+
+Run original full-search comparisons, independent affine/combined comparisons, direct resampler equivalence, separate-vs-combined stages, checkpoint between stages, configured CLI, old checkpoint restore/continuation, known-truth mapping/image/topology checks, cancellation/fault rollback, context isolation and tracked-memory plateau. ASan/UBSan covers every suite; TSan covers context/reliability/new stage paths. Source packaging must clean-build and test directly from the delivered ZIP and replay the incremental patch byte for byte.
+
+Synthetic accuracy is an engineering regression result, not evidence of clinical accuracy or large-rotation global convergence. Publish real-data and platform qualifications separately; no GPU/backend optimization may loosen frozen thresholds to obtain a passing result.
+# Legacy GUI restore invariants (0.5.1)
+
+Initialize source/target stacks before `-I` reads align.com. Explicit restoration failure must exit before opening the GUI or overwriting saved registration files. Native voxel affines describe loaded grids separately from the centered pull map.
+
+Reading a dense nonlinear field must preserve that field exactly through viewing and saving. Building editable basis coefficients reconstructs an approximation at the active basis grid; restore the validated read buffer after that initialization rather than silently replacing a finer imported map. Refresh the Jacobian display from the restored affine and field. Explicit basis changes and new fitting retain the original numerical method. Legacy align.com is a dense-map interchange format; use the engine checkpoint for exact optimizer continuation.
+
+Write float32 transform/grid values with nine significant decimal digits. The opt-in `tests/test_gui_restore.py` checks exact dense-map and transform preservation, source geometry mismatch, truncated field, missing alignment, and actual GUI nonlinear fitting in a private virtual display. Enable `JIP_TEST_X11` only where Xvfb/Xtst and the stated Python dependencies are installed. Keep the standalone numerical regression tests enabled independently.
+
+
+## Efficiency invariants (0.8.2)
+
+Interpolation sample order, float products/double sums and sequential optimizer decisions remain unchanged. Common serial coefficients use bounded stack storage; larger kernels retain checked allocation. Accelerator vectors are owned by the context's shared accelerator and reclaimed at destruction, never allocated into a trial arena. Do not add scratch to the arena without updating clone/release/ownership verification together. Device failures still recalculate the complete touched region. Automatic GPU selection verifies the first output but waits for three warm, unchanged-source trials before rejecting performance. Large batches must retain cancellation checkpoints during host preparation.
+
+jip_profile is a separate optional diagnostics ABI. Timers are monotonic wall time and some are inclusive (transform includes preparation/dispatch/scatter; run includes them all). These counters are not numerical checkpoint data, allocation guarantees or full-process/GPU memory estimates. Native field() copies borrowed pointers before the engine closes and returns float32 native geometry matching the file exporter. The result-only bridge must never replace centered pull coordinates with forward/RAS displacement without the existing explicit conversion.
+
+Scratch recovery must check the lengths of jobs, outputs AND indices on every request. std::vector growth can throw after one vector has already enlarged. Publish pointers only after all lengths satisfy the requested count. Keep the injected failures after each of the three growth steps, followed by a last-slot write and real interpolation run. The fixed16,384-sample cap is independent of the image voxel limit.
+
+## Regions and centered coordinate cache (0.8.3)
+
+The fixed/moving selection arrays are immutable engine-owned inputs, borrowed from the locked accepted context by a trial. sample_selection is mutable numerical state: clone, release, ownership verification and checkpoint004 restore must stay in sync. Metric accumulation AND affine/nonlinear intensity normalization use the same membership. Source mask membership is nearest working voxel; moving windows instead test the continuous pulled RAS point, not a voxelized rectangle. Plane axes ignore depth. Never modify image intensities, interpolation taps, regularization or no-mask numerical paths to implement selection. Recompute membership on local probes and after checkpoint field restore. A failed acceleration tile must reconstruct the complete touched region. Unmasked checkpoint003 remains byte-compatible;004 stores explicit masks/windows under CRC. Older1–3 reads remain supported.
+
+The bounded coordinate cache is context-control state, not numerical checkpoint data or arena ownership. It reuses exactly the original Convert_Voxel_to_Space values only for diagonal centered grids with axes<=4096. Validate all geometry and dimensions before reuse; general and oversized grids use original conversion. Do not combine affine products, approximate weights or change float/double accumulation order. Run frozen optimizer/resampler comparisons, sampled independent membership/metric reference, masked checkpoint continuation, every sampled creation allocation failure, rollback/cancel and backend exactness before shipping. Native GUI/GPU performance remains a separate test.
+
+Common width1/2 Lanczos coefficients may be memoized only by their COMPLETE float coordinate bits and width. No fraction quantization; preserve each original rounded coefficient. Restrict the shortcut to coefficient-generation loops: interpolation tap accumulation and wrapping loops must always execute in the original z/y/x order. Larger/smoothing kernels retain original generation. Control caches are fixed-capacity, zero-initialized per context/trial and excluded from checkpoints. Frozen differential resampler tests must catch any omitted accumulation loop.

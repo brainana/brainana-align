@@ -1,13 +1,13 @@
 {
   "app": "Brainana Align",
-  "version": "0.17.26-workflow-ui.1",
-  "buildId": "grouped-workflow-ui-1",
-  "bundleVersion": "17261",
+  "version": "0.18.0",
+  "buildId": "0.18.0",
+  "bundleVersion": "17262",
   "bundleIdentifier": "org.brainana.align",
-  "minimumMacOS": "11.0",
+  "minimumMacOS": "14.0",
   "behaviorReference": "0.15.4",
   "readableSourceBase": "0.11.1",
   "frontendStatus": "Production frontend built entirely from readable TypeScript source; no recovered application bundle is loaded",
-  "architecture": "Shared readable TypeScript/NiiVue scientific frontend with physical-coordinate rigid, similarity, anisotropic-scale, affine, landmark-polyharmonic, and automatic image-driven inverse control-grid transforms. Linear landmark fits include diagnostics and explicit opt-in reflection safeguards.",
-  "releaseName": "Brainana Align v0.17.26-workflow-ui.1"
+  "architecture": "npm-workspaces apps/align plus domain-independent core-desktop, core-launcher, core-server, core-client and imaging-math packages; dedicated hardened Electron window and separately packaged browser edition; physical-coordinate 6/7/9/12-parameter registration, guided setup, sessions, exports and SFTP retained. Regularized, invertibility-bounded 3D landmark spline with same-map inverse, cancellable workers, schema-4 sessions and RAS displacement exports. Architecture-specific macOS desktop builds use embedded Electron Node for workstation launchd jobs; no standalone Node runtimes in desktop bundles. Staged scalar NIfTI header inspection, streaming user-controlled working grids, physical-state preservation, system memory guidance, read-only shared viewer arrays, active-level registration and native-grid slab export.",
+  "releaseName": "Brainana Align v0.18.0"
 }

@@ -1,0 +1,26 @@
+/* Align's design tokens follow the Graphite + Amber palette in Brainana Viewer.
+   Registration-specific layout and behavior remain independently implemented. */
+@font-face { font-family:'Source Sans 3'; font-style:normal; font-weight:400 700; font-display:swap; src:url('/fonts/source-sans-3.woff2') format('woff2'); }
+@font-face { font-family:'IBM Plex Mono'; font-style:normal; font-weight:400; font-display:swap; src:url('/fonts/ibm-plex-mono-400.woff2') format('woff2'); }
+@font-face { font-family:'IBM Plex Mono'; font-style:normal; font-weight:600; font-display:swap; src:url('/fonts/ibm-plex-mono-600.woff2') format('woff2'); }
+:root {
+  color-scheme:dark;
+  --bg:#14120d;
+  --panel:#1c1913;
+  --panel-2:#241f17;
+  --text:#ece6d8;
+  --muted:#a1957f;
+  --accent:#e6a13a;
+  --accent-2:#f4c877;
+  --accent-ink:#241700;
+  --accent-glow:rgba(230,161,58,.16);
+  --elev:#2e2818;
+  --border:#2b2518;
+  --border-2:#3a3221;
+  --danger:#e5675a;
+  --ok:#8bbf6e;
+  --warn:#d9a24c;
+  --font:'Source Sans 3',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --shadow:0 1px 0 rgba(255,240,210,.03),0 14px 34px -18px rgba(0,0,0,.72);
+}

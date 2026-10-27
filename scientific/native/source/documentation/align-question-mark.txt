@@ -1,0 +1,337 @@
+!8 0 nothing special
+You have selected "nothing special."  Try again?
+
+!32 0 alignment panels
+There are 3 pages on the alignment panel. Use L or R clicks to switch between them.
+NOTE: Parameters on this panel are selected differently from other text fields outside the panel.
+      Use the up/down arrows to highlight fields, and the left/right arrows to change fields.
+--------
+1st page
+--------
+The 1st page sets up the alignment. If the orientation is completely different from the template,
+you can rotate in steps of +- 90 degrees around x, y, or z. Alternatively, you can swap the z
+order, which changes the parity of the coordinate system.  A "hidden feature" (not recommended unless
+angles are small) is the use of a "deck-of-cards" alignment matrix in place of the affine one. Access
+this feature with control-A.
+  Two filters are provided: 1) a "rolloff" filter to reduce long-range intensity variations by
+dividing the image by a smoothed version of itself, and 2) a overlay filter to remove signal
+outside the brain (USE A STANDARD TEMPLATE!). The overlay can be loaded using the "-o" option on startup
+or simply read from the file ".ovl" using the read key/button ("r").
+  Downsampling is useful for speeding alignment for affine transformation, but don't use downsampling
+for non-linear warps unless image resolution and contrast are quite good. Generally, use the default
+down-sampling options. Employ multi-resolution alignment by using "A" or the R button on the
+"auto-alignment affine" text field.
+--------
+2nd page
+--------
+The 2nd page contains the affine alignment parameters. Parameters can be individually selected or
+removed from automated alignment by hitting the "x" key; an all/none selection is provided below
+the alignment parameters. To see and change parameter increments for manual adjustment, use the TAB key
+to switch between adjusting values versus adjusting increments. When would one want to remove parameter?
+Consider this case: automated alignment is applied using a high-resolution anatomical image with good
+contrast. Then, this alignment is used as the basis for aligning EPI data with the same slices.
+Because the slice selection process is identical for the two sequences, there is no need to adjust
+the z position or the z size (doing so with low-contrast data likely will lead to error). So, remove
+z and size-z, and adjust other parameters to account for slice-specific shifts and distortions.
+--------
+3rd page
+--------
+This page contains X,Y,Z distortion fields. Select fields by highlighting and hitting "x".
+When "A" is used (or R-mouse click on "auto-align" text field), the current basis grid and rigidity are used.
+When "a" or L-mouse click is used, adjustments start from the current down-sampling setting (e.g., 8)
+and proceed to finer grid sizes until 2x undersampling is reached.
+The "smooth|stiff" setting adjusts the penalty distortion between a setting of "smooth"
+(the penalty depends upon the 2nd derivative of the distortion fields) and "stiff" (penalty depends
+only upon 1st derivative) or an admixture of the two. To visualize distortion fields, select the
+"individual/template" field to step past these options and show the distortion fields. Remember that
+the space bar toggles between individual/template.
+
+!194 0 on mosaic window
+This is the image mosaic window.
+To change the number of slices shown, click on the pound sign above the image window on the right.
+To change the number of rows & columns, select the field just to the right of the "mosaic:" field
+on the top right.
+To switch to 3-plane mode, select the "mosaic:" field.
+To flip the image up-down, add or remove a "-y" option on startup.
+
+!200 0 nothing special (mosaic window)
+You may have tried to select the mosaic window, but you picked a border between
+mosaic images.
+
+!130 0
+This is x-y plane in orthogonal 3-plane mode.
+To switch to mosaic mode, select the "3-plane:" field on the top right.
+To flip the image up-down, add or remove a "-y" option on startup.
+
+!258 0
+This is y-z plane in orthogonal 3-plane mode.
+To switch to mosaic mode, select the "3-plane:" field on the top right.
+To flip the image up-down, add or remove a "-y" option on startup.
+To show a rotated version of this image, select the "Y vs Z" field on the top right.
+To make "Z versus Y" the default, use "-Y" on startup.
+
+!264 0
+nothing special (3-plane data window, no panel)
+
+!1032 0
+nothing special (3-plane data window, no panel)
+
+!514 0
+This is x-z plane in orthogonal 3-plane mode.
+To switch to mosaic mode, select the "3-plane:" field on the top right.
+To flip the image up-down, add or remove a "-y" option on startup.
+
+!520 0
+nothing special (3-plane data window)
+
+!1026 0
+This is z-y plane in orthogonal 3-plane mode.
+To switch to mosaic mode, select the "3-plane:" field on the top right.
+To flip the image up-down, add or remove a "-y" option on startup.
+To show a rotated version of this image, select the "Z vs Y" field on the top right.
+
+!2064 0
+__________________ COLOR BAR ____________________________________
+The colorbar depicts activation overlays using either a linear
+scale ("-a" option from command line) or a log-10 scale ("-p"
+from command line). Note that all linear maps are subject to an
+implicit filter from the preceding log-10 map, under the assumption
+that the log-10 map represents p values and the following linear
+map shows an index like percent signal change.
+OPTIONS:
+-  When more than 1 activation map is loaded, use the +/- keys
+   to page through different activation maps.
+-  To change the lower/upper limit of the colorbar, position the
+   cursor near the lower/upper range and use the up/down arrows.
+-  To set the lower/upper range, click near the lower/upper limit
+   using the L BUTTON.
+-  To expand the lower/upper range, click near the lower/upper limit
+   using the R BUTTON.
+-  To select just one tail of the distribution, click on either
+   the "+" or "-" fields above the colorbar using the L BUTTON.
+-  To switch the +/- color fields, click on these fields using
+   the R button. This is sometimes useful to account for a sign
+   change in the map; e.g., "+ activation" procudes "-" signal
+   changes using MION.
+-  To toggle through +/- colorbars with different color maps, use
+   the left/right arrows with the cursor on the colorbar.
+_________________________________________________________________
+
+!4 1 Selectable-text overlay/wire lists
+This option is enabled when lists of predefined overlays or wire frames have been
+loaded during startup. If both lists of both overlays and wire frames have been
+loaded, selection of this field (L or R button) will toggle between the overlay
+and wire frame lists.
+
+!4 2 Selectable-text overlay/wire
+This option is enabled when lists of predefined overlays or wire frames have been
+loaded during startup. The L and R buttons will move through overlay or wire frame
+list in the forward and backward directions, respectively. Up/down arrow keys
+act exactly like L/R buttons. The left/right arrow keys will add overlays or
+wire frames to the image without deleting existing ones.
+
+!4 4 Selectable-text data type
+When complex data is loaded, this field allows the selection of magnitude, phase,
+real, or imaginary data display. The L/R buttons (or arrows) move one forward/backward
+through the 4 display options.
+
+!4 8 Selectable-text mosaic/3-plane
+Selection of this option toggles between mosaic and tri-planar display modes.
+Alternatively, use keyboard "3" to toggle between display modes.
+
+!4 16 Selectable-text mosaic panels OR Y-Z/Z-Y field
+In mosaic display ...
+   This option changes the number of row and columns in the mosaic display while keeping
+   the number of slices constant. The L button increases columns (and decreases rows),
+   while the R button decreases columns.
+In the 3-plane display mode ...
+   This option changes between Y-Z and Z-Y display orientations. "Y vs Z" is useful
+   for displaying aligned rodent brains, whereas "Z versus Y" is useful for displaying
+   aligned primate brains. Differences between rodents and primates result from different
+   orientations in the scanner and different stereotaxic conventions in atlases.
+
+!4 32 Selectable-text tailbar +
+Click on the "+" above the color bar with the L button to choose only the positive
+tail of the map. Use the R button to switch +/- tails.  Use the left/right arrows to
+change the color map scheme.
+
+!4 64 Selectable-text tailbar -
+Click on the "-" above the color bar with the L button to choose only the negative
+tail of the map. Use the R button to switch +/- tails.  Use the left/right arrows to
+change the color map scheme.
+
+!4 128 Selectable-text N
+This option generates new wire frames (to draw a square overlay, click the R mouse button
+and drag down and to the right).  When an activation map is present, use of the L button
+will create an overlay from a activation island, and the R button will prompt for a wire frame.
+  A wire frame is useful in two ways: 1) to visualize regions of interest without covering
+them by an overlay, and 2) to generate overlays of arbitrary shape.
+  Wire frames are drawn using Bezier curves. Every 4 points defines a smooth curve, so the
+first wire segment does not appear until after 4 points are marked (L mouse button).
+Subsequently, only 3 points are needed, since the 4th point ends the previous segment.
+When a wire segment is nearly completed, you can choose to end it or close it; the latter
+option connects to the first point of the first segment and additionally generates an
+overlay by filling the closed wire frame.
+*** Currently, wire frames can only be drawn on the x-y plane (mosaic or 3-plane mode). ***
+
+!4 256 Selectable-text r/R
+This option reads an overlay (r) or wire frame (R) from files .ovl or .wire,
+respectively.  Use the L button for overlays and the R button for wire frames.
+Overlays are based upon voxel indices, whereas wire frames are based upon spatial
+coordinates. Wire frames can be used across resolution scales, whereas overlays
+are fixed to a specific grid.
+  The format of overlay files consists of either 3 or 4 entries per line in an
+ASCII file, with the first 3 entries indicating the (i j k) voxel indices
+corresponding to the (x y z) axes. The 4th entry, if present, is the voxel weight
+and should be between 0 and 1. In all ROI calculations, weighted summations are
+performed across the overlay.
+  A wire frame file is an ASCII-formatted table of Bezier control points, with each
+listing an (x,y,z) coordinate position followed by a "1" (pen down) or "0" (pen up),
+with the latter indicating the end of a wire frame.
+
+!4 512 Selectable-text w/W
+This option writes an overlay (w) or wire frame (R) into files .ovl or .wire,
+respectively.  Use the L button for overlays and the R button for wire frames.
+The format of the .ovl or .wire files is obvious from inspection, but see help
+for the "r/R" options for information about file formats.
+
+!4 1024 Selectable-text d/D
+This option deletes an overlay (d) or wire frame (D), respectively.
+Use the L button for overlays and the R button for wire frames.
+
+!4 2048 Selectable-text c/C
+This option changes the color of an overay (c) or wire frame (C), respectively.
+Use the L button for overlays and the R button for wire frames. This can be
+useful when an overlay or wire frame falls on top of activation of similar color.
+
+!4 4096 Selectable-text m/M
+This option mirrors an overlay(m) or wire frame (M) in the x dimension. This
+is useful for right-left centered images, as encountered in stereotaxic atlases
+based upon histology or in registered MRI spaces that are centered left-right.
+
+!4 8192 Selectable-text f/F
+This option fills all closed wire frames on the display, turning them into a region
+of interest. Wire frames provide a means to span different resolutions, so they can
+be drawn at high resolution (e.g., histology or atlas) and transfered to MRI resolution.
+Alternatively, high-resolution overlays can be down-sampled using jip into stored
+overlays at the resolution of interest.
+
+!4 16384 Selectable-text s/S
+Using this section, region-of-interest data for a single time point (s, L button) or
+all time points (S, R button) goes to the shell window. The output consists of the
+number of voxels in the overlay, the average signal value, and the standard devation
+of the signal across the overlay.
+
+!4 32768 Selectable-text T
+This options toggles the transparency setting of overlays. In the default mode,
+the transparency of the overlay can be made to be dependent upon the underlying
+grayscale image for visualization of anatomy under the overlay. Alternatively, the
+overlay can be made opaque.
+
+!4 65536 Selectable-text i
+This selection automatically sets the contrast/brightness levels of the image display.
+If an overlay is present on the volume, then only voxels within the overlay are
+used in the calculation; otherwise, all voxels in the active volume are used.
+There is only 1 setting of contrast/brightness for all loaded volumes.
+An alternative method for setting contrast/brightness is to drag across the image
+window with the L button depressed: left/right changes contrast, while up/down
+changes brightness. Yet another way to do this is to place the cursor on an
+"unused" portion of the display window and use L/R/U/D arrows.
+
+!4 131072 Selectable-text z
+This option either decreases (L button, or "z") or increase (R button, or "Z") the zoom
+factor the display window.
+
+!4 262144 Selectable-text +
+This option toggles between 3 possible displays of the crosshairs: line, pixelated,
+and none. Narrow line crosshairs are useful because they minimize the amount of
+occluded image. Pixelated crosshairs show the full extent of the region corresponding
+to the crosshair, accounting both for differences in resolution and for image
+interpolation. When crosshairs are completely removed from the image, time graphs
+will be updated for every movement of the cursor, rather than for movement of the
+crosshair. Also, arrows move overlays when the cursor is removed from the display.
+
+!4 524288 Selectable-text I
+Selection of this field, or using the TAB key, toggles between the default display
+or interpolation of the image (including activation, crosshair, overlays) across the
+zoom factor.
+
+!4 1048576 Selectable-text g
+This option brings up the graph window. There are 4 current graph types:
+3 projections (x,y,z) through the data, and a time graph including a GLM model.
+
+!4 2097152 Selectable-text h/H
+This selection provides help in either short form (h, L button) or long form
+(H, R button). This help is very general. For questions about specific functions,
+use the "?" key or text button.
+
+!4 4194304 Selectable-text q
+This selection, or simply "q" from the keyboard, quits the program.
+
+!4 8388608 Selectable-text ?
+This feature provides the most detailed help about text buttons or regions of
+the window. First click on the "?" text button or enter "?" from the keyboard,
+and then click on a different text button or some regions of the window
+(e.g., colorbar, image, ...).
+
+!4 16777216 Selectable-text #
+This option enables one to change the number of panels in the mosaic display.
+A prompt provides two options:
+ 1) Input a number of panels and then hit RETURN, and the mosaic will then display
+    that number of panels filled by contiguous slices. One can shift the position
+    of the slices shown in the mosaic by using the < or > keys, or the mouse scroll wheel.
+ 2) Select slices shown in the full mosaic using the L mouse button, and then hit RETURN
+    when done.  Slice will be shown as selected; they do not need to be contiguous.
+
+!4 33554432 Selectable-text R
+This text button enables display of different slice orientations using a mosaic format.
+The slice orientations are those shown in tri-planar mode: X-Y, X-Z, and either Y-Z or Z-Y.
+Use the LEFT or RIGHT mouse buttons to select different orientations.
+
+!4 67108864 Selectable-text individual/template
+This field toggles between different image volumes :
+ -individual data (to be aligned)
+ - template  data (target for alignment)
+ - 3 distortion fields (x,y,z)
+ - a volume to display basis functions
+To toggle between just the individual and template, use the space bar.
+
+!4 134217728 Selectable-text select parameters
+This field toggles between "select all" and "select none" to either choose all alignment
+parameters or turn all parameters off.  To turn ON/OFF individual parameters, type "x"
+with the desired parameter selected.
+
+!4 268435456 Selectable-text cost function
+This field shows the current cost function, which is mutual information. In the future,
+this field may be used to toggle between different cost functions for automated alignment.
+
+!4 536870912 Selectable-text "recall saved"/"reset"/"recall"
+When the first page of alignment setup is shown (orientation, filters, down-sampling),
+this field recalls saved parameters from file "align.com". When other parameter fields
+are shown, this field will toggle between "reset" and "recall" in order to show the
+effect of adjusting all the parameters in that window.  For instance, this can be useful
+to visualize the effect of either including or excluding non-linear parameters.
+
+!4 1073741824 Selectable-text auto-alignment
+Auto-alignment text button:
+  When the text field displays "auto-align affine", selection of this field initiates automated
+alignment using either the original resolution (L button) or a multi-resolution approach (R button)
+starting with the down-sampling shown on the setup page and proceding to increase resolution by
+factors of 2 in each iteration.
+  When the text field displays "auto-align nonlin", selection of this field initiates automated
+alignment using either the current basis grid (L button) or a multi-step procedure (R button) that
+progresses from small basis grids (low resolution) to larger grids (higher resolution).
+
+!4 -2147483648 Selectable-text Do-Everything
+"Do Everything" button.
+Ok - this button doesn't "do everything".  What is does is this:
+ 1) apply the rolloff filter using a smoothing kernel equal to 1/4 FOV,
+ 2) apply the overlay filter if an overlay is loaded,
+ 3) perform affine alignment using the multi-resolution approach,
+ 4) remove the overlay filter,
+ 5) perform non-linear alignment using the multi-step approach.
+You should roughly position the image volume prior to alignment.
+Also, set the desired parameters for alignment, including:
+  - affine parameter of interest            (default = all)
+  - non-linear alignment fields of interest (default = all)
+  - rigidity.

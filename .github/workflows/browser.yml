@@ -1,0 +1,26 @@
+name: Built app browser checks
+on:
+  workflow_call:
+permissions:
+  contents: read
+jobs:
+  browsers:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: node node_modules/playwright-core/cli.js install --with-deps chromium firefox webkit
+      - run: npm run test:browser
+      - run: npm run test:browser-matrix
+        env:
+          BRAINANA_REQUIRE_BROWSER_ENGINES: chromium,firefox,webkit
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: validation-browser
+          path: browser-engine-results.json

@@ -1,0 +1,32 @@
+!0 0
+	    {{ input options from shell window }}
+align [individual] -t [template] [options]     align -h for short help
+					       align -H for long  help menu
+	   1) image display format
+	   2) overlays & wire frames
+	   3) wrapping
+!1 0
+image display format:
+_____________________
+-y		flip the y orientation of images up/down (X11 standard versus openGL standard)
+example:	alias align ~/bin/jip-align -y;  align -y file.nii -t template.nii
+
+-z [integer]	set the beginning zoom factor
+-x [integer]	set the beginning number of panels in x
+-m [integer]	start in mosaic format with this many panels (<= # of slices)
+-3		start in tri-plane display mode
+example:	align file.bshort -t template.bshort -m 1 -x 6 -z 2
+example:	align file.nii    -t template.nii -3
+
+!2 0
+overlays & wire frames
+______________________
+-o          read a file containing a list of overlays
+-w          read a file containing a list of wireframes
+example:    align file.nii -t template.nii -o overlay-list.dat -w wire-list.dat
+
+!3 0
+wrapping of images in x,y,z during alignment
+______________________
+-W 110      means wrap in x & y but not z (this is DEFAULT)
+-W 100      means wrap in x but not y or z (etc.)
