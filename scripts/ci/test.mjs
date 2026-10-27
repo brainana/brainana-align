@@ -6,7 +6,7 @@ const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..')
 const pkg=JSON.parse(fs.readFileSync(path.join(root,'package.json'),'utf8'))
 // Native macOS launcher/OS commands are separately checked by the macOS jobs.
 // Browser GPU suites get a dedicated Linux job with installed browser engines.
-const macOnly=new Set(['test:macos-runtime','test:macho','test:lifecycle','test:lifecycle-detach','test:lifecycle-launchd','test:ssh-cancel','test:ssh-terminal','test:local-startup'])
+const macOnly=new Set(['test:desktop-packaging','test:macos-runtime','test:macho','test:lifecycle','test:lifecycle-detach','test:lifecycle-launchd','test:ssh-cancel','test:ssh-terminal','test:local-startup'])
 const posixOnly=new Set(['test:launch-handshake'])
 const native=new Set(['test:jip-service','test:displacement-simpleitk'])
 const nativeOnly=process.argv.includes('--native-only')

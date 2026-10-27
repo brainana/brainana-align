@@ -29,9 +29,8 @@ export function startFakeSftpServer(rootDir) {
     publicKeyEncoding: { type: 'pkcs1', format: 'pem' },
   })
 
-  // Our client always sends absolute remote paths (remoteRoot is absolute), so serve the
-  // real fs directly; relative paths (if any) resolve under rootDir. Test double only.
-  const toLocal = (p) => (path.isAbsolute(p) ? p : path.join(rootDir, p))
+  // SFTP paths are POSIX even when the test host is Windows.
+  const toLocal = (p) => path.join(rootDir, path.posix.normalize('/'+p).slice(1))
 
   const clients = []
   const server = new Server({ hostKeys: [privateKey] }, (client) => {

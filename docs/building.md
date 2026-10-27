@@ -111,3 +111,9 @@ Cross-platform path fixtures normalize expected paths using the host path module
 The compiled UI proposal test waits for the actual manual controls to unlock,
 with a bounded timeout, rather than assuming an Intel runner finishes its overlay
 within 180 milliseconds. Keep the transform and proposal assertions after this wait.
+
+The legacy `test:desktop-packaging` suite exercises macOS launchd/Bash wrappers
+and runs on macOS. Each release target still runs `ci:verify-package` against its
+own native installer payload. SSH test fixtures use a POSIX virtual filesystem
+root and an explicit Node interpreter so host Windows paths and Unix shebangs
+do not become protocol or executable assumptions.

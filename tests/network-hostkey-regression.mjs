@@ -59,10 +59,10 @@ try {
   const transfer=new SftpClient({host:'127.0.0.1',port,username:'test',password:'test',knownHostsPath})
   try {
     await transfer.connect()
-    const absolute=await transfer.realpath(remoteRoot)
+    const absolute=await transfer.realpath('/')
     assert.ok((await transfer.list(absolute)).some(entry=>entry.name==='image.nii.gz'))
-    assert.equal((await transfer.stat(path.join(absolute,'image.nii.gz'))).size,5)
-    const chunks=[];for await(const chunk of transfer.createReadStream(path.join(absolute,'image.nii.gz')))chunks.push(chunk)
+    assert.equal((await transfer.stat(path.posix.join(absolute,'image.nii.gz'))).size,5)
+    const chunks=[];for await(const chunk of transfer.createReadStream(path.posix.join(absolute,'image.nii.gz')))chunks.push(chunk)
     assert.deepEqual(Buffer.concat(chunks),Buffer.from([1,2,3,4,5]))
     assert.equal(transfer.options.password,undefined,'Drop retained authentication secrets after handshake')
     ok('trusted SFTP realpath/list/stat/stream returns exact image bytes')
