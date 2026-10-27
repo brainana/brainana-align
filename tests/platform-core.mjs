@@ -10,12 +10,12 @@ assert.equal(mac.cacheRoot, path.join(home, 'Library', 'Caches', 'Brainana Align
 assert.equal(mac.logRoot, path.join(home, 'Library', 'Application Support', 'Brainana Align', 'logs'))
 
 const linux = applicationPaths({ platform: 'linux', home: '/home/tester', version: '1.2.3', env: {} })
-assert.equal(linux.configRoot, '/home/tester/.config/brainana-align')
-assert.equal(linux.cacheRoot, '/home/tester/.cache/brainana-align/1.2.3')
-assert.equal(linux.logRoot, '/home/tester/.local/state/brainana-align/logs')
+assert.equal(linux.configRoot, path.normalize('/home/tester/.config/brainana-align'))
+assert.equal(linux.cacheRoot, path.normalize('/home/tester/.cache/brainana-align/1.2.3'))
+assert.equal(linux.logRoot, path.normalize('/home/tester/.local/state/brainana-align/logs'))
 const linuxXdg = applicationPaths({ platform: 'linux', home: '/h', version: 'v', env: { XDG_CONFIG_HOME: '/cfg', XDG_CACHE_HOME: '/cache', XDG_STATE_HOME: '/state', XDG_DATA_HOME: '/data' } })
-assert.equal(linuxXdg.configRoot, '/cfg/brainana-align')
-assert.equal(linuxXdg.cacheRoot, '/cache/brainana-align/v')
+assert.equal(linuxXdg.configRoot, path.normalize('/cfg/brainana-align'))
+assert.equal(linuxXdg.cacheRoot, path.normalize('/cache/brainana-align/v'))
 
 const windows = applicationPaths({ platform: 'win32', home: 'C:\\Users\\tester', version: '1.2.3', env: { APPDATA: 'R:\\AppData', LOCALAPPDATA: 'L:\\AppData' } })
 assert.match(windows.configRoot, /Brainana Align$/)

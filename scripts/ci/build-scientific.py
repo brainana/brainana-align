@@ -69,13 +69,15 @@ if not (install/'lib/libfftw3.a').exists():
     source=SCI/'native/source/fftw-3.2.2/configure'
     if SYSTEM=='Windows':
         import shlex
-        cmd='export PATH=/mingw64/bin:/usr/bin:$PATH; export CFLAGS=-O2 CC=gcc; '+shlex.quote(msys(source))+' --build=x86_64-w64-mingw32 --host=x86_64-w64-mingw32 --prefix='+shlex.quote(msys(install))+' --disable-fortran --disable-dependency-tracking --enable-static --disable-shared --with-pic && make -j'+JOBS+' && make install'
+        cmd='export PATH=/mingw64/bin:/usr/bin:$PATH; export CFLAGS=-O2 CC=gcc; '+shlex.quote(msys(source))+' --build=x86_64-w64-mingw32 --host=x86_64-w64-mingw32 --prefix='+shlex.quote(msys(install))+' --disable-fortran --disable-dependency-tracking --enable-static --disable-shared --with-pic && make -j'+JOBS+' MAKEINFO=true && make install MAKEINFO=true'
         run([bash,'-lc',cmd],cwd=fftw)
     else:
         ffenv=dict(ENV);ffenv['CFLAGS']='-O2'+(' -arch '+ARCH+' -mmacosx-version-min=14.0' if SYSTEM=='Darwin' else '')
         triplet='arm-apple-darwin' if ARCH=='arm64' else 'x86_64-apple-darwin'
         run([bash,source,*(['--build='+triplet,'--host='+triplet] if SYSTEM=='Darwin' else []),'--prefix='+str(install),'--disable-fortran','--disable-dependency-tracking','--enable-static','--disable-shared','--with-pic'],cwd=fftw,env=ffenv)
-        run(['make','-j'+JOBS],cwd=fftw);run(['make','install'],cwd=fftw)
+        # FFTW 3.2.2's legacy Texinfo rules cannot regenerate docs on modern hosts.
+        # Build/install the unchanged library using bundled documentation instead.
+        run(['make','-j'+JOBS,'MAKEINFO=true'],cwd=fftw);run(['make','install','MAKEINFO=true'],cwd=fftw)
 # Vendored zlib avoids depending on a developer's Homebrew/Windows installation.
 zsrc=BUILD/'zlib-source';zbuild=BUILD/'zlib'
 if not zsrc.exists():shutil.copytree(SCI/'native/source/zlib-1.3.1',zsrc)

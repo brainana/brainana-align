@@ -99,3 +99,15 @@ reference from the candidate to make a failing numerical check pass.
 
 Native GUI/GPU pixels, platform installation behavior and code-signing identities
 require their own target-system review beyond headless worker/DOM checks.
+
+### Hosted-runner compatibility notes
+
+FFTW 3.2.2 is built with `MAKEINFO=true` for both compilation and installation.
+Its legacy Texinfo regeneration rules fail with modern Linux Texinfo and absolute
+out-of-tree paths; the bundled documentation remains available. This does not
+change the FFTW library or registration code. Keep the override on Windows too.
+
+Cross-platform path fixtures normalize expected paths using the host path module.
+The compiled UI proposal test waits for the actual manual controls to unlock,
+with a bounded timeout, rather than assuming an Intel runner finishes its overlay
+within 180 milliseconds. Keep the transform and proposal assertions after this wait.
