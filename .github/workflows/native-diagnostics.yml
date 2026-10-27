@@ -1,0 +1,29 @@
+name: Native diagnostics
+on:
+  workflow_dispatch:
+    inputs:
+      runner:
+        description: Native runner to investigate (does not publish)
+        type: choice
+        options: [ubuntu-22.04, windows-2022, macos-15-intel]
+        default: ubuntu-22.04
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - uses: ./.github/actions/build-native
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-diagnostics-${{ inputs.runner }}
+          path: |
+            artifacts/validation/
+            generated/scientific-build.json
+            scientific/runtime-validation.json
