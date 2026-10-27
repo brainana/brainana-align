@@ -93,7 +93,16 @@ build(engine,*targets)
 checks=['engine-acceleration-arithmetic','engine-acceleration-backend','engine-acceleration-transaction','engine-private-linkage','engine-contexts','engine-registration-interface','engine-sampling','engine-threaded-resampler','engine-resampler-equivalence','engine-checkpoint-compatibility']
 if SYSTEM!='Windows':checks.append('engine-reliability')
 if SYSTEM=='Darwin' and ARCH=='arm64':checks.append('engine-reference-workflow')
-run(['ctest','--test-dir',engine,'--output-on-failure','--no-tests=error','-R','^('+'|'.join(checks)+')$'])
+try:
+    run(['ctest','--test-dir',engine,'--output-on-failure','--no-tests=error','-R','^('+'|'.join(checks)+')$'])
+finally:
+    # Preserve synthetic failure evidence; never substitute candidate output for goldens.
+    evidence=ROOT/'artifacts/validation/native';evidence.mkdir(parents=True,exist_ok=True)
+    for folder in [engine/'engine/interface-test',SCI/'native/validation'/('compatibility-'+engine.name),engine/'Testing/Temporary']:
+        if folder.exists():
+            destination=evidence/folder.name
+            shutil.copytree(folder,destination,dirs_exist_ok=True)
+
 # Recover the checked upstream ITK source, never fetch unpinned source at build time.
 pin=json.loads((SCI/'native-itk/UPSTREAM.json').read_text());archive=SCI/'native-itk/vendor'/pin['archive']
 if hashlib.sha256(archive.read_bytes()).hexdigest()!=pin['sha256']:raise RuntimeError('ITK source checksum mismatch')

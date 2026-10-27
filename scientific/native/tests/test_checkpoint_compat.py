@@ -13,7 +13,7 @@ for case in expected['cases']:
     (O/(name+'.log')).write_text(result.stdout+result.stderr)
     for suffix in ('','-field'):
         b=(O/(name+suffix+'.nii')).read_bytes();at=int(struct.unpack_from('<f',b,108)[0]);gold=case['outputs'][suffix or 'image']
-        assert hashlib.sha256(b[at:]).hexdigest()==gold['data_sha256']
+        assert hashlib.sha256(b[at:]).hexdigest()==gold['data_sha256'], f'{name}{suffix}: voxel payload differs from stored 0.1.0 reference'
         assert list(struct.unpack_from('<12f',b,280))==gold['native_affine']
 (O/'results.json').write_text(json.dumps({'status':'PASS','previous_version':'0.1.0','restore':'exact image/field payloads and geometry','continuation':'exact image/field payloads and geometry'},indent=2)+'\n')
 print('CHECKPOINT_COMPAT_RESULT 0.1.0 restore and continuation match exactly')
