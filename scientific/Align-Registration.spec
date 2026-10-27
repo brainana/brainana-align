@@ -27,7 +27,7 @@ analysis=Analysis([str(root/'launch.py')],pathex=[str(root)],
               'dask','cupy','vtk','nibabel.tests','scipy.tests','numpy.tests'],noarchive=False)
 pyz=PYZ(analysis.pure)
 exe=EXE(pyz,analysis.scripts,[],exclude_binaries=True,name='BrainanaAlignRegistration',
-    debug=False,bootloader_ignore_signals=False,strip=False,upx=False,console=True,
+    debug=False,bootloader_ignore_signals=False,strip=sys.platform.startswith('linux'),upx=False,console=True,
     target_arch=platform.machine() if sys.platform=='darwin' else None,
     codesign_identity=None,entitlements_file=None)
-collection=COLLECT(exe,analysis.binaries,analysis.datas,strip=False,upx=False,name='scientific-runtime')
+collection=COLLECT(exe,analysis.binaries,analysis.datas,strip=sys.platform.startswith('linux'),upx=False,name='scientific-runtime')

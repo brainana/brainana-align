@@ -33,7 +33,9 @@ try{
  assert(!scientificFiles.some(p=>/SimpleITK|PyQt|PySide|QtWidgets|jip_workbench/.test(path.relative(science,p))),'GUI/large external scientific runtime must not ship')
  const size=folder=>walk(folder).filter(p=>!fs.lstatSync(p).isSymbolicLink()).reduce((sum,p)=>sum+fs.statSync(p).size,0)
  const appBytes=size(app),scientificBytes=size(science)
- assert(scientificBytes<=90_000_000,'Scientific runtime exceeds90MB budget')
+ const sizeReport={appBytes,scientificBytes,largest:scientificFiles.filter(p=>!fs.lstatSync(p).isSymbolicLink()).map(p=>({path:path.relative(science,p),bytes:fs.statSync(p).size})).sort((a,b)=>b.bytes-a.bytes).slice(0,15)}
+ const sizeOut=path.join(root,'artifacts/validation');fs.mkdirSync(sizeOut,{recursive:true});fs.writeFileSync(path.join(sizeOut,'size-'+platform+'-'+arch+'.json'),JSON.stringify(sizeReport,null,2)+'\n')
+ assert(scientificBytes<=90_000_000,'Scientific runtime exceeds90MB budget: '+scientificBytes+' bytes; largest: '+JSON.stringify(sizeReport.largest.slice(0,5)))
  if(platform==='darwin'&&arch==='arm64')assert(appBytes<=350_000_000,'Apple Silicon app exceeds350MB budget')
  const worker=path.join(resources,'scientific-runtime','BrainanaAlignRegistration'+(platform==='win32'?'.exe':''))
  const scientific=JSON.parse(execFileSync(worker,['--align-capabilities'],{encoding:'utf8',timeout:60000}));assert.equal(scientific.runtime,'brainana-align-registration')
