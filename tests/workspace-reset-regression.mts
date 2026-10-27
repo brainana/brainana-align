@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import {createRequire} from 'node:module'
 import {installWorkspaceReset} from '../apps/align/src/workspaceReset'
+async function waitFor(predicate:()=>boolean){for(let i=0;i<200;i++){if(predicate())return;await new Promise(r=>setTimeout(r,10))}assert.fail('Workspace reset must finish')}
 const {JSDOM}=createRequire(import.meta.url)('jsdom')
 async function fixture({confirm=true,busy=false,fail=false}={}){
  const dom=new JSDOM('<button id="reset-workspace">Reset workspace</button><div id="guided-card"></div><button id="guided-resume"></button><div id="settings-modal"></div>',{pretendToBeVisual:true})
@@ -13,9 +14,9 @@ async function fixture({confirm=true,busy=false,fail=false}={}){
  dom.window.addEventListener('align-workspace-reset-failed',()=>events.push('failed-event'))
  installWorkspaceReset({activity:{get busy(){return busy},begin:async()=>{starts++;busy=true;return true},end:()=>{ends++;busy=false}},status:text=>statuses.push(text),reload:()=>{assert.deepEqual(events,['reset-event','guide','recovery','recent','layout']);reloads++;events.push('reload')}})
  const click=()=>dom.window.document.querySelector<HTMLButtonElement>('#reset-workspace')!.click()
- click();click();await new Promise(r=>setTimeout(r,40))
+ click();click();if(confirm&&starts>0)await waitFor(()=>fail?ends===1:reloads===1)
  if(!confirm||busy&&starts===0){assert.equal(reloads,0);assert.equal(starts,0);assert.equal(stored.guide.route,'refinement');assert.equal(events.length,0)}
- else if(fail){assert.equal(reloads,0);assert.equal(ends,1);assert(statuses[0].includes('disk full'));assert(events.includes('failed-event'));assert.equal(dom.window.document.querySelector<HTMLElement>('#guided-card')!.inert,false);fail=false;events.length=0;click();await new Promise(r=>setTimeout(r,40));assert.equal(reloads,1,'Retry after storage failure completes');assert.equal(stored.recovery,null)}
+ else if(fail){assert.equal(reloads,0);assert.equal(ends,1);assert(statuses[0].includes('disk full'));assert(events.includes('failed-event'));assert.equal(dom.window.document.querySelector<HTMLElement>('#guided-card')!.inert,false);fail=false;events.length=0;click();await waitFor(()=>reloads===1);assert.equal(reloads,1,'Retry after storage failure completes');assert.equal(stored.recovery,null)}
  else{assert.equal(reloads,1);assert.equal(confirms,1);assert.equal(starts,1);for(const key of ['guide','recovery','recent','layout'])assert.equal(stored[key],null);assert.equal(dom.window.document.querySelector<HTMLElement>('#guided-card')!.inert,true)}
  assert.deepEqual(stored.preferences,{appearance:'light'});assert.deepEqual(stored.presets,{mine:'colors'});assert.deepEqual(stored.export,{folder:'chosen'})
  dom.window.close()
