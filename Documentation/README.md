@@ -1,3 +1,11 @@
+# Brainana Align 0.18.0
+
+See the [project overview](../README.md), [software credits and scientific references](../docs/software-credits.md),
+and [JIP provenance, repairs and integration changes](../docs/jip-changes.md).
+The following feature guides remain applicable. Historical release notes retain
+their original version labels; current qualification is recorded in each release's
+validation reports and manifests.
+
 # Brainana Align 0.17.10 · image flipping
 
 In **Alignment display → Image comparison**, choose **Flip between images**. Use **Show MRI/CT** (or the selected image pairing) to switch manually, or **Auto flip · 1 s** to alternate each second. The label identifies the image currently shown and whether it is fixed or moving. Each view keeps its current slice/zoom and the same aligned grid. The other image is hidden, including through empty moving-image background. Display colors remain controlled by Display mode; choose Grayscale opacity for grayscale inspection.

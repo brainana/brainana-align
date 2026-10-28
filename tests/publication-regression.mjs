@@ -8,9 +8,14 @@ import {fileURLToPath} from 'node:url'
 import {createRequire} from 'node:module'
 import vm from 'node:vm'
 import {asarEntry} from '../scripts/ci/asar-path.mjs'
+import {macOutput} from '../scripts/ci/package-output.mjs'
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..'),scratch=fs.mkdtempSync(path.join(os.tmpdir(),'align-publication-'))
 const hash=b=>crypto.createHash('sha256').update(b).digest('hex')
 try{
+ assert.equal(macOutput([path.join(scratch,'mac')],'x64'),path.join(scratch,'mac'))
+ assert.equal(macOutput([path.join(scratch,'mac-x64')],'x64'),path.join(scratch,'mac-x64'))
+ assert.equal(macOutput([path.join(scratch,'mac-arm64')],'arm64'),path.join(scratch,'mac-arm64'))
+ assert.equal(macOutput([path.join(scratch,'mac')],'arm64'),undefined,'Never substitute an Intel output for ARM')
  // Exercise the real ASAR reader under both host path implementations.
  const require=createRequire(import.meta.url),implementation=require.resolve('@electron/asar/lib/filesystem.js'),dependencyRequire=createRequire(implementation)
  for(const pathApi of [path.posix,path.win32]){

@@ -2,6 +2,8 @@ Brainana Align 0.16.84 incorporates SFTP/known-host verification and test fixtur
 
 Architecture comparison for 0.16.84 used Brainana Viewer commit aaa47a989329f9b42c97a592ad0801b7d896216e, retrieved 2026-10-20. Existing adapted SFTP code retains its prior attribution.
 
-Optional JIP registration: the companion application and modified headless adapter retain the JIP and FFTW notices provided with their complete shared source. See Source/JIP and its licenses. Align exchanges private working images and physical transformations through an isolated process.
+JIP numerical registration is derived from the JIP toolkit developed by Joseph B. Mandeville at Massachusetts General Hospital / Athinoula A. Martinos Center. Align incorporates a repaired/adapted native nonlinear engine inside its private bundled worker; it does not require a companion JIP application. Original MGH software-license terms remain at scientific/native/source/engine/JIP-LICENSE.txt. Modification provenance and validation boundaries are documented in docs/jip-changes.md. This is not an upstream JIP release.
+
+The worker also incorporates ITK 5.4.6 (native B-spline registration and N4), FFTW, NIfTI C/znzlib, zlib, lmfit/MINPACK-derived code, NumPy, NiBabel and nlohmann/json. NiiVue supplies image rendering; Electron/Chromium/Node.js supply the desktop runtime. Original component licenses and notices are retained. See docs/software-credits.md for authors, roles, source links, license locations and scientific references. Align's application license does not replace those component licenses.
 
 The repository history contains an earlier BSD-3-Clause Align snapshot. Its original copyright/license notice is retained at licenses/Brainana-Align-original-BSD-3-Clause.txt. The current prepared distribution declares AGPL-3.0-only; retain all scientific and vendor license notices.

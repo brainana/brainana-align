@@ -6,11 +6,12 @@ import crypto from 'node:crypto'
 import {execFileSync} from 'node:child_process'
 import {extractFile} from '@electron/asar'
 import {asarEntry} from './asar-path.mjs'
+import {macOutput} from './package-output.mjs'
 const platform=process.platform,arch=process.arch,root=process.cwd(),release=path.join(root,'apps/align/release')
 const candidates=fs.readdirSync(release).map(name=>path.join(release,name)).filter(p=>fs.statSync(p).isDirectory())
 let app,resources,exe
 if(platform==='darwin'){
- const folder=candidates.find(p=>p.endsWith('mac-'+arch));assert(folder,'Missing native macOS unpacked output')
+ const folder=macOutput(candidates,arch);assert(folder,'Missing native macOS unpacked output')
  app=path.join(folder,'Brainana Align.app');resources=path.join(app,'Contents/Resources');exe=path.join(app,'Contents/MacOS/Brainana Align')
  execFileSync('/usr/bin/codesign',['--verify','--deep','--strict',app]);const slices=execFileSync('/usr/bin/lipo',['-archs',exe],{encoding:'utf8'}).trim();assert.equal(slices,arch==='x64'?'x86_64':arch)
 }else{

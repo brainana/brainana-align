@@ -76,11 +76,45 @@ use the documented MSYS2 MINGW64 toolchain; MSVC is not a supported engine toolc
 
 The older repository snapshot is retained in Git history; its BSD notice is preserved in `licenses/Brainana-Align-original-BSD-3-Clause.txt`.
 
+## Incorporated software and references
+
+Align builds on these projects and their authors' work:
+
+| Software | Role in Align |
+|---|---|
+| [JIP — Joseph B. Mandeville / MGH](https://www.nmr.mgh.harvard.edu/~jbm/jip/) | Repaired/adapted native nonlinear registration, with the original MGH notices retained. |
+| [ITK](https://itk.org/) | Native cubic B-spline nonlinear registration and N4 bias correction. N4 reference: [Tustison et al., 2010](https://doi.org/10.1109/TMI.2010.2046908). |
+| [NiiVue](https://niivue.com/) | Image viewing and WebGL2 rendering. |
+| [NumPy](https://numpy.org/) and [NiBabel](https://nipy.org/nibabel/) | Numerical arrays, physical-image geometry and scientific-worker NIfTI handling. |
+| [FFTW](https://www.fftw.org/), [NIfTI C/znzlib](https://github.com/NIFTI-Imaging/nifti_clib), [zlib](https://zlib.net/) and lmfit/MINPACK | Native numerical and image-format support retained through JIP. |
+| [Electron](https://www.electronjs.org/), [Node.js](https://nodejs.org/), [Python](https://www.python.org/) and [PyInstaller](https://pyinstaller.org/) | Dedicated desktop application, local services and bundled scientific worker. |
+| [Brainana Viewer](https://github.com/brainana/brainana-viewer) | Organization/release reference and adapted SFTP/known-host code and tests. |
+
+See **[software credits, component versions, licenses and scientific references](docs/software-credits.md)**
+for the complete attribution guide, including frontend/data-access libraries and
+test-only dependencies. AFNI/FSL/ANTs/elastix linear-default profiles reference
+those tools' settings; their executables are not bundled as extra linear engines.
+
+### Changes to JIP
+
+This distribution incorporates a **modified JIP implementation**, not an upstream
+JIP release. Earlier work repaired nonlinear stencils and validity checks,
+optimizer acceptance/rollback, inverse maps, image geometry, field I/O and 64-bit
+memory/indexing. Later native-engine extraction, optimization and Align integration
+are checked against the frozen, already-repaired baseline; this is not a claim of
+universal equivalence to unmodified upstream JIP.
+
+The **[JIP provenance and modification record](docs/jip-changes.md)** explains each
+repair, retained mathematical conventions, Align-specific adaptations, platform
+fixes and validation limits, with links to source and tests. JIP's control-grid
+model and ITK's cubic B-spline route remain distinct. In Align, both nonlinear
+routes start from an accepted linear alignment.
+
 ## License and acknowledgements
 
 Align is **AGPL-3.0-only**; see [LICENSE](LICENSE) and [NOTICE.txt](NOTICE.txt).
-The scientific subtree retains its original JIP/FFTW/ITK and other third-party source,
-checksums and license notices. Private subject datasets and credentials are excluded from the publication export. Synthetic reference fixtures are intentionally retained for regression tests.
-The source/release layout follows the same approach as
-[Brainana Viewer](https://github.com/brainana/brainana-viewer), while retaining Align's
-separate registration functionality and embedded scientific runtime.
+Third-party components retain their original copyrights and license terms,
+including JIP's MGH software license and FFTW/ITK notices. See the linked credits
+and the license files supplied with the source and installers.
+Private subject datasets and credentials are excluded from the source export;
+synthetic regression fixtures are retained intentionally.

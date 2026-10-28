@@ -6,6 +6,8 @@ Hosted-runner corrections: normalize test paths, wait for session/overlay/storag
 
 Runtime-size qualification strips Linux debug symbols and builds the same pinned Intel NumPy1.26.4 against macOS14 Accelerate, avoiding its69MB bundled OpenBLAS. Frozen-worker tests preserve uppercase Windows OS environment keys and stop the full process tree on timeout while saving synthetic failure evidence. Runtime-size reports identify the largest bundled files; the90MB worker limit remains enforced.
 
+Added README credits and scientific references for incorporated software, with a linked JIP provenance/repair record separating original numerical corrections, the frozen repaired baseline, native-engine integration and platform packaging changes. Corrected the obsolete companion-JIP notice and documented validation scope. Package verification recognizes electron-builder's default Intel `mac/` output while still checking the executable's actual architecture.
+
 # 0.17.10 · pure-image flip inspection · 2026-10-27
 
 - Added Alignment display → Image comparison: Smooth opacity or Flip between images, with manual switching and optional one-second automatic flipping.
