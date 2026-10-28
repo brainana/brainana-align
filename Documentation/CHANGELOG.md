@@ -1,3 +1,12 @@
+# Unreleased · documentation
+
+Reorganized the README around purpose, features, an application screenshot,
+installation and first-launch help, and a practical quick start. Clarified Align's
+role alongside the Brainana pipeline for routine T1/T2/EPI processing, distinguished
+the registration tools, and added plain-language explanations of the JIP repairs
+and what their reference tests establish. Added the supplied CT/MRI workspace
+screenshot. These changes update documentation only.
+
 # 0.18.0 · public source and native GitHub releases · 2026-10-27
 
 Migrated the existing repository to the current standalone Align source organization and gated native GitHub builds for macOS Apple Silicon/Intel, Windows x64 and Linux x64. Retained the repository history and original BSD notice. Application/registration functionality matches the prepared0.17.10 baseline; version/bundle identity advances the older repository's separate0.17.26-workflow-ui.1 sequence. Complete source, licenses, tests, validation, manifests and checksums accompany successful releases. Native platforms are qualified by their actual CI jobs; configuration alone is not a platform pass.

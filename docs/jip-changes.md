@@ -16,6 +16,37 @@ is identical to the original, unmodified JIP distribution.
 Source-relative links below work in the repository or extracted source tree. The
 full release bundle supplies that tree in its matching source ZIP.
 
+## What this means for an Align user
+
+JIP is one of the app's **nonlinear** registration methods. It starts from a linear
+alignment you have already accepted, then estimates local displacements. Align's
+landmark and linear fitting run separately; using those tools does not run JIP.
+
+The modifications have three purposes:
+
+1. **Correct the calculations.** For example, a smooth deformation along the Z
+   direction should receive the same kind of bending penalty as an equivalent
+   deformation along X or Y. The repair corrects inconsistent calculations. It
+   also checks the complete transform for local collapse and makes failed or
+   non-improving optimizer trials restore the preceding state.
+2. **Keep images and saved fields consistent.** Use the selected NIfTI geometry,
+   solve the full nonlinear map when computing its inverse, and validate all
+   displacement components before restoring them. Wide indices and checked sizes
+   address large-image overflow and allocation failures.
+3. **Make JIP work inside the desktop app.** The bundled worker receives the
+   accepted linear alignment and selected regions, reports progress, and supports
+   cancellation and recovery. Users do not install or launch a separate JIP app.
+
+These are not all cosmetic changes: correcting the numerical code can change the
+estimated alignment. Later performance and packaging changes are checked against
+an archived reference that **already includes the repairs**. Agreement with that
+reference supports preservation of the repaired behavior, not equivalence to all
+original upstream results or proof of anatomical accuracy.
+
+The sections below provide the detailed audit trail. Platform/build fixes are
+listed separately; in particular, the Windows ITK shutdown fix belongs to the
+other nonlinear backend, not JIP.
+
 ## Provenance and reference baseline
 
 | Stage | Record |
