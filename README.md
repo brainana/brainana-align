@@ -21,6 +21,13 @@ for most routine **T1, T2 and EPI registration** within a processing workflow.
 Align is intended for individual alignment cases, hands-on inspection and
 adjustment, and cases where automated registration is failing.
 
+To incorporate **CT or other imaging modalities into a Brainana workflow**, we
+recommend aligning them to the **processed T1 (or T2) output from the
+[Brainana pipeline](https://github.com/brainana/brainana)** for the same subject.
+Use that processed anatomical image as the **fixed/reference image** and the CT or
+other image as the **moving image**. This places the additional modality in the
+coordinate space of the processed anatomy used by the pipeline.
+
 ## Features
 
 <p align="center">
@@ -95,8 +102,10 @@ with your OS version and asset filename. Keep system-wide security protections e
 ## Quick start
 
 1. **Load your images.** Choose the image pairing and load the two volumes. For
-   CT-to-MRI work, check that the transform direction is **CT → MRI**. Click
-   **Guided setup** for step-by-step help.
+   CT-to-MRI work, check that the transform direction is **CT → MRI**. To align
+   additional modalities with Brainana outputs, load the pipeline's **processed
+   T1 or T2 as the fixed/reference image**, and the CT or other modality as the
+   moving image. Click **Guided setup** for step-by-step help.
 2. **Set corresponding landmarks.** Click **New landmark**, navigate to the same
    anatomical point in each image, and set its MRI and CT positions. Repeat with
    points spread across the anatomy; rigid fitting requires at least three

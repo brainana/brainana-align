@@ -5,7 +5,9 @@ installation and first-launch help, and a practical quick start. Clarified Align
 role alongside the Brainana pipeline for routine T1/T2/EPI processing, distinguished
 the registration tools, and added plain-language explanations of the JIP repairs
 and what their reference tests establish. Added the supplied CT/MRI workspace
-screenshot. These changes update documentation only.
+screenshot. Recommend the pipeline's processed T1/T2 as the fixed reference when
+incorporating CT or other modalities into Brainana workflows. These changes update
+documentation only.
 
 # 0.18.0 · public source and native GitHub releases · 2026-10-27
 
