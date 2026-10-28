@@ -5,6 +5,27 @@ manual adjustment and image-based registration. It supports physical-coordinate
 rigid, similarity, anisotropic and affine transforms, advanced landmark splines,
 embedded JIP/ITK nonlinear registration, preparation tools and native-grid export.
 
+## Purpose and goals
+
+Brainana Align was originally developed to register CT images to MRI images of the
+same brain. Automated methods can struggle with this pairing, especially when
+implants introduce imaging artifacts in the CT. The original focus was therefore
+landmark-based registration: users identify corresponding anatomical points in
+both images and use them to establish an alignment they can inspect and adjust.
+
+For CT and MRI of the same brain, a rigid landmark transform can be sufficient
+when the images share the same underlying anatomy and physical scale. Rigid,
+6-parameter alignment remains the default. The aim is to make this workflow
+accessible while keeping transform direction, physical coordinates and alignment
+quality clear to the user.
+
+The app has since expanded to include automated image-based registration, manual
+adjustment, additional transform models and other imaging modalities. Users can
+start with landmarks, use automated methods independently, or refine an existing
+alignment, then review the result before accepting and exporting it. Landmark
+registration remains a central workflow, particularly when image artifacts make
+automated alignment difficult.
+
 ## Download
 
 Use this repository's **Releases** page and choose the installer for your computer:
