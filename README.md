@@ -149,17 +149,8 @@ The changes fall into three groups:
 | Changes | What they address |
 |---|---|
 | **Numerical and image-geometry repairs** | Correct calculations used to penalize deformation and check distorted regions; make optimizer trials accept improvements or restore the previous state; correct inverse deformation and NIfTI geometry handling. These repairs can change results compared with the original JIP code. |
-| **Reliability for large images and saved results** | Replace unsafe 32-bit size/index assumptions, check allocations and invalid values, and validate deformation files before restoring them. These changes address overflow, incomplete output and inconsistent restored state. |
+| **64-bit support and reliable saved results** | Use 64-bit image indices and file offsets, with checked size calculations and memory allocations, so large images are handled correctly without 32-bit overflow. Validate displacement values and deformation files before restoring them to prevent incomplete or inconsistent saved state. |
 | **Integration into Align** | Run JIP in a bundled worker, pass the accepted linear alignment and selected regions explicitly, convert image coordinates consistently, and support cancellation and recovery without closing the app. |
-
-Later performance and platform work is tested against a **frozen reference copy
-that already contains the earlier repairs**. Matching that reference checks that
-later changes preserve the repaired behavior; it does not mean the repaired code
-is identical to unmodified JIP, or that every registration is anatomically correct.
-
-JIP's deformation grid and **ITK's cubic B-spline method are separate algorithms**.
-The Windows ITK shutdown fix and installer/build changes are documented separately
-from the JIP numerical repairs.
 
 See the **[JIP changes and validation record](docs/jip-changes.md)** for a plain-language
 walkthrough, the technical corrections, source and test links, and validation limits.
