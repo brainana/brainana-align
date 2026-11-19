@@ -5,6 +5,7 @@ import {Worker as NodeWorker} from 'node:worker_threads'
 import {File} from 'node:buffer'
 import {JSDOM} from 'jsdom'
 import * as nifti from 'nifti-reader-js'
+import {gzipSync} from 'fflate'
 import {installImagePreparation} from '../apps/align/src/imagePreparation'
 import {alignmentLayout} from '../apps/align/src/alignmentLayout'
 import {installGuidedSetup} from '../apps/align/src/guidedSetup'
@@ -46,4 +47,5 @@ click();for(let i=0;i<100&&!busy;i++)await new Promise(r=>setTimeout(r,2));docum
 // also requires new acquisition details, while the other input retains them.
 await prep.select('ct',[volume('new-ct.nii') as any]);click();for(let i=0;i<1000&&commits<3;i++)await new Promise(r=>setTimeout(r,10));assert.equal(commits,3);assert.deepEqual(lastChanged,['ct']);assert.deepEqual(loaded.mri.acquisition,acquisitionMri);assert.equal(loaded.ct.acquisition,undefined)
 loaded.ct.acquisition=acquisitionCt;document.querySelector<HTMLButtonElement>('#working-resolution')!.click();const frame=document.querySelector<HTMLInputElement>('.preparation-frame input')!;frame.value='2';frame.dispatchEvent(new dom.window.Event('input'));click();for(let i=0;i<1000&&commits<4;i++)await new Promise(r=>setTimeout(r,10));assert.equal(commits,4);assert.deepEqual(lastChanged,['mri']);assert.equal(loaded.mri.acquisition,undefined);assert.deepEqual(loaded.ct.acquisition,acquisitionCt)
+const prior=loaded,priorState=prep.state(),priorStarts=starts,priorCommits=commits,priorName=document.querySelector('#ct-name')!.textContent;await assert.rejects(prep.select('ct',[new File([gzipSync(new Uint8Array(0))],'empty-ct.nii.gz') as any]),/empty-ct.*no complete NIfTI header/);assert.equal(loaded,prior);assert.deepEqual(prep.state(),priorState);assert.equal(starts,priorStarts);assert.equal(commits,priorCommits);assert.equal(document.querySelector('#ct-name')!.textContent,priorName);
 guide.close();dom.window.close();console.log('Preparation DOM + actual emitted worker: header-only selections, joint planning/live memory, guide waiting, edited resolution, shared viewer data, source vs resolution changes, failure rollback and cancellation passed.')

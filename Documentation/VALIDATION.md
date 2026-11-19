@@ -1,3 +1,10 @@
+# 0.18.1 · large native export qualification
+
+`test:native-paging` checks 32 datatype/endian/compression/frame combinations, original scaling and physical geometry, complete old/new exported arrays for nearest/linear/cubic, tiny-cache eviction and tile subdivision, nonlinear native preprocessing, NaN zero-weight behavior, truncation and cancellation. Its exact emitted-worker test reads real sparse file data beyond 4 GiB without a large native array. `test:native-export-browser` independently uses real Chrome File objects and the exact emitted worker, verifying every expected output voxel and bounded cache/read sizes. These are CPU/file/export tests; they do not imply GPU rendering certification.
+
+The existing native/working export, preprocessing, session, geometry, region, guide and compiled UI suites remain required. Real provided CT qualification, exact package/runtime/ASAR/signature/size proofs, suite logs and limitations are recorded in Validation/REPORT.json. Registration algorithms and the incorporated scientific runtime remain numerically unchanged.
+
+
 # 0.17.10 · flip inspection validation
 
 Executed release checks: **82 passed, zero failed, two browser suites blocked**. Initial loopback-socket restrictions were resolved by granting network permission and rerunning the affected checks; the original restricted results are retained separately. Chrome exists but aborts during launch in this execution environment; no native GPU validation is claimed. The unchanged dependency lockfile currently reports13 npm audit findings(3 high,10 moderate); the raw audit is included. This display-only release does not claim dependency remediation.

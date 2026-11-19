@@ -48,7 +48,7 @@ try {
 
   assert.equal(await page.locator('#mri-file').isDisabled(), true)
   assert.equal(await page.locator('#ct-file').isDisabled(), true)
-  assert.equal(await page.locator('#export-open').isDisabled(), true)
+  assert.equal(await page.locator('#new-pair').isDisabled(), true)
 
   assert.deepEqual(pageErrors, [], `Unexpected browser page errors: ${pageErrors.join('\n')}`)
   assert.equal(await page.locator('#browser-compatibility').evaluate(element => element.classList.contains('error')), true)

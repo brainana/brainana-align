@@ -1,3 +1,10 @@
+# 0.18.1 · paged native export
+
+`nativeVoxelSource.ts` owns scalar native I/O: uncompressed files can be range-read directly; gzip streams are unpacked in 8 MiB chunks. Native data retain their original scalar encoding. The fast path keeps8MiB encoded chunks within an allowance derived from installed RAM (one third, capped at8GiB); large gzip inputs can instead use Blob backing and bounded page reads. The default decoded-page cache is bounded at128MiB, with coalesced bounded reads and LRU eviction. Byte counts and indices use safe Number arithmetic, without signed 32-bit casts. Blob backing is browser-managed RAM/disk and remains part of capacity planning.
+
+`pagedNativeExport.ts` maps bounded spatial tiles through the existing full inverse registration, prefetches interpolation support, subdivides when support exceeds cache, fills strips in NIfTI order and feeds1MiB chunks to incremental gzip. `exportSampling.ts` provides the paged scalar-reader path with the existing interpolation arithmetic. `nativeProcessingValue` replays working-grid preprocessing on requested native samples and caches processed pages. No full native Float32 source or destination array is created. Compressed output remains a Blob passed through the existing destination workflow. Worker termination cancels temporary Blob ownership without partial destination writes.
+
+
 # 0.17.9 · focused viewer boundary
 
 `viewInteraction.ts` owns canvas event routing. It consumes wheel input once and delegates normalized zoom to `viewZoom.ts`, which alone updates the current pane's camera within 0.1–64×. `sliceCrosshairs.ts` is an instance-local Niivue adapter for physical 2D slices: it projects the current RAS-mm position through the renderer's completed tile metadata and draws clipped pixel-width lines. It restores GL state and delegates non-2D drawing to Niivue. It never touches registration controls, image arrays, headers, working grids or transforms. `main.ts` installs the same adapter for source and review viewers. Vendor code is not patched and no global prototype changes are used.

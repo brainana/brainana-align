@@ -1,3 +1,7 @@
+Native export update · 0.18.1
+
+Native NIfTI export now reads source voxels in encoded chunks or cached pages and resamples tiled output, removing the former 1.5 GiB native input-array cutoff. Native geometry, interpolation and processing rules are preserved. The working-image allocation limit remains separate. See Documentation/CHANGELOG.md and Validation/REPORT.json in the release bundle.
+
 # Brainana Align 0.17.10 · image flipping
 
 In **Alignment display → Image comparison**, choose **Flip between images**. Use **Show MRI/CT** (or the selected image pairing) to switch manually, or **Auto flip · 1 s** to alternate each second. The label identifies the image currently shown and whether it is fixed or moving. Each view keeps its current slice/zoom and the same aligned grid. The other image is hidden, including through empty moving-image background. Display colors remain controlled by Display mode; choose Grayscale opacity for grayscale inspection.

@@ -1,3 +1,12 @@
+# 0.18.1 · artificial native export cutoff
+
+The export controller rejected any native moving input whose hypothetical Float32 array exceeded1.5GiB. The worker then called prepareVolume at native spacing, even when registration used a smaller working image. Thus reducing working resolution could not avoid the native allocation. This was an export architecture restriction, not a NIfTI format limit.
+
+Native export now pages the original encoded samples, with caller-budgeted 8 MiB encoded-memory chunks or gzip Blob backing, with a128MiB page cache for range reads and processed samples, bounded range reads, adaptive tile subdivision and bounded output strips. Float32 output, qform/sform interpretation, selected frame, interpolation and complete nonlinear/manual mapping are preserved. Native-processed rules act before interpolation in physical space; original arrays/files stay immutable. Do not remove the cutoff while reinstating a full native array, or confuse source paging with reduced registration resolution. Total Blob backing and compressed output/destination memory remain budgeted.
+
+The file-validation investigation also found a valid gzip containing zero decompressed bytes. Header-size checks now produce a named empty/truncated-image error before any DataView read; no data are invented or repaired. Native browser testing reads a real sparse source above 4 GiB using Chrome File objects and the exact emitted worker. A Node test range adapter is necessary because this host's Node24 openAsBlob reports some file sizes modulo4GiB; that workaround is never part of production code.
+
+
 # 0.17.10 · flip inspection audit
 
 The existing animation varies moving opacity between25% and75%; it never displays a pure image. Added a separate launch-local comparison selector and fixed/moving inspection state. Reserved values -1/2 in the existing per-view overlayAlphaShader select pure fixed/moving shader branches; ordinary opacity remains clamped0..1. The moving-only branch renders opaque black for empty moving samples rather than revealing fixed anatomy. Fixed/moving textures, camera/slice state, physical transform and source arrays remain untouched. The supported shader path only changes a uniform and redraws; the existing shader-rejection fallback changes volume opacities and uploads, then restores fixed opacity when returning to blend.

@@ -1,3 +1,8 @@
+# 0.18.1 · large input export
+
+Native export retains the same user-selected image source, FoV, native/working/custom spacing, interpolation, direction and complete nonlinear transformation. It reads native samples through bounded cached pages instead of applying the working-array allocation limit to export. Native mask/crop/edit projection and native image intensities are preserved; display contrast remains viewing-only. Large compressed input backing and output storage remain explicit planning costs.
+
+
 # 0.17.9 · viewer reliability
 
 Source and overlay views share normalized bounded wheel zoom and fixed pixel-width crosshairs. MRI, CT/T1/T2/EPI labels and registration methods remain independent of that viewer implementation. Six source panes and three review panes have renderer-command coverage for high zoom and physical geometry. Native GPU visual verification is still required on the review build.

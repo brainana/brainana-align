@@ -13,8 +13,8 @@ export function memoryPlan(infos:VolumeInfo[],spacings:Dims3[],reading:MemoryRea
  const reserve=reading?Math.max(.5*GiB,.15*reading.total):0,budget=budgetGiB>0?budgetGiB*GiB:null,capacity=reading?Math.max(0,reading.total-reserve):null,usable=capacity===null?budget:budget===null?capacity:Math.min(capacity,budget)
  const unsupported=grids.some(g=>voxels(g.dims)*4>MAX_WORKING_BYTES||g.dims.some(n=>n>2048))
  const rating=unsupported?'Exceeds supported working size':usable===null?'Capacity unavailable':low>usable?'Above planning allowance':high>usable||largest>64e6?'Potentially slow':'Comfortable'
- const native=infos.map(i=>voxels(i.dims)),exportHigh=high+(4*Math.max(0,...native)+12*Math.max(0,...native))
- return {grids,low,high,usable,reserve,rating,unsupported,exportHigh,workingVoxels:sum,nativeExportLimited:native.some(n=>n*4>MAX_WORKING_BYTES)}
+ const native=infos.map(i=>voxels(i.dims)),exportHigh=high+Math.max(0,...infos.map((info,i)=>native[i]*info.bytesPerVoxel))+12*Math.max(0,...native)+.5*GiB
+ return {grids,low,high,usable,reserve,rating,unsupported,exportHigh,workingVoxels:sum,nativeExportPaged:native.some(n=>n*4>MAX_WORKING_BYTES)}
 }
 export function recommendSpacings(infos:VolumeInfo[],reading:MemoryReading|null,budget=0,multiplier=1):Dims3[]{
  let spacing=Math.max(...infos.map(i=>Math.min(...i.spacing)),...infos.map(i=>Math.max(...i.dims.map((n,a)=>(n-1)*i.spacing[a]))/320))*multiplier

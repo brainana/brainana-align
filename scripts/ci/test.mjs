@@ -10,7 +10,7 @@ const macOnly=new Set(['test:desktop-packaging','test:macos-runtime','test:macho
 const posixOnly=new Set(['test:launch-handshake'])
 const native=new Set(['test:jip-service','test:displacement-simpleitk'])
 const nativeOnly=process.argv.includes('--native-only')
-const browser=new Set(['test:browser','test:browser-matrix'])
+const browser=new Set(['test:browser','test:browser-matrix','test:native-export-browser'])
 const results=[]
 for(const name of Object.keys(pkg.scripts).filter(n=>n.startsWith('test:')&&(!nativeOnly||native.has(n)))){
  let reason=!nativeOnly&&native.has(name)?'Required in native worker stage':browser.has(name)?'Dedicated browser job':macOnly.has(name)&&process.platform!=='darwin'?'macOS-specific launcher test':posixOnly.has(name)&&process.platform==='win32'?'POSIX Python launcher integration':null

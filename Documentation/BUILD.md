@@ -1,3 +1,8 @@
+# 0.18.1 · native export checks
+
+Run `npm run build`, `npm run test:native-paging`, `npm run test:native-export-browser` and the full validation suite before packaging. The real browser test accepts `CHROMIUM_PATH` and a dist-directory argument and uses a temporary sparse image rather than private data. The emitted-worker test uses bounded64-bit filesystem ranges for its sparse fixture, avoiding a Node24 openAsBlob test-harness size-wrap bug. The source ZIP includes both tests and helpers. The scientific native runtime is reused unchanged; no new Python, ITK, JIP or GPU dependency is required for this export path.
+
+
 # 0.17.10 build note
 
 Run the full application suite including test:flip-inspection, test:workflow, test:guide-export-inspection, test:viewer-rendering and compiled UI. Package the existing compact embedded scientific runtime unchanged, regenerate the slim workstation payload after the final frontend build, then verify exact ASAR/assets/signature/runtime and release archive checksums. Apple Silicon macOS14+ remains the target for this review release.

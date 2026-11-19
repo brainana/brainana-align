@@ -1,3 +1,12 @@
+# 0.18.1 · native image export above the working-array limit · 2026-11-19
+
+Removed the native export dependency on one full-size Float32 moving-image array. Native scalar NIfTI inputs now use chunked encoded storage within a RAM allowance, with cached range reads when inputs exceed that allowance. Output is resampled in spatial tiles and bounded strips, then compressed incrementally. This supports native images beyond the previous 1.5 GiB input-array cutoff, including 64-bit byte offsets. Working image allocation limits remain independent.
+
+Preserved nearest/linear/cubic interpolation, physical affines, selected frames, both transform directions and full nonlinear mappings. Native-processed export applies working-grid crop/mask/edit rules lazily to native sample centers before interpolation. Updated memory planning to budget native encoded backing, page cache and compressed output/destination storage honestly. Empty/truncated input headers now fail with a named diagnostic before DataView reads.
+
+Added source/emitted-worker and actual Chrome File/worker regressions above 4 GiB, datatype/endian/frame/compression coverage, complete old/new exported-array comparisons, cache eviction/subdivision, nonlinear preprocessing, cancellation and source immutability. Full real-data export qualification and package evidence are in Validation/REPORT.json.
+
+
 # Unreleased · documentation
 
 Reorganized the README around purpose, features, an application screenshot,

@@ -129,7 +129,7 @@ Keep only one active pyramid scorer, reuse histogram scratch, and preserve sampl
 phase/world-axis semantics when bounding iteration by ROI. Never remove window axes.
 Native image export reloads moving voxels, uses native fixed geometry only, and
 resamples/compresses slabs. Destination Blob/upload buffers remain budgeted; do not
-claim end-to-end constant-memory export. Native scalar array has a 1.5 GiB limit.
+claim end-to-end constant-memory export. Working scalar arrays retain a 1.5 GiB limit; native NIfTI export uses independent paged file/Blob access and must not inherit that working-array limit.
 Header-only/streaming fallback support must be labelled honestly for other formats.
 Memory readings are trusted main-frame, read-only IPC; estimates are conservative
 ranges, reserve headroom and do not claim registration accuracy or guaranteed speed.
@@ -283,3 +283,8 @@ identity and tag equality. Record native platform/GPU/installer limits honestly.
 Run test:publication, actionlint, CI core/native tests and packaged proof after
 changing this build/release setup. Do not retrofit these changes into the original
 working-app folder unless the user explicitly requests that migration.
+
+
+# Large native export contract (0.18.1)
+
+Native NIfTI export never calls prepareVolume at native spacing or allocates a full native Float32Array. Use nativeVoxelSource and pagedNativeExport: caller-budgeted 8 MiB encoded-memory chunks or bounded Number-indexed pages, spatial output tiles/strips, unchanged interpolation and full inverse mapping. Gzip backing is assembled in bounded Blob batches; total encoded-memory/Blob and output/destination storage remain budgeted and are not claimed constant-memory. Maintain exact endian/slope/frame behavior and Float32 narrowing. Native-processed export replays the original working-grid crop, mask and sparse edits on native sample centers before interpolation; never apply display contrast. Keep cancellation transactional (no saved partial result), native/fixed geometry explicit and current working/native buffers immutable. Test source sizes and byte/index offsets above 2 GiB and 4 GiB with actual emitted workers, cache eviction/subdivision, every scalar datatype/endian/frame, all interpolators, nonlinear maps, preprocessing and real browser File handling. Node24 openAsBlob size wrapping is a test-harness issue; do not weaken the browser/File size contract to accommodate it. Run test:native-paging, test:native-export-browser, existing native/working export, processing, geometry, sessions, protected region and full packaged checks. Reject short/empty/truncated headers before DataView reads and preserve the current workspace after failed selection.

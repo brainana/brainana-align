@@ -27,4 +27,11 @@ const jipFit:any={...imageGeometryAlignment('ct-mri'),model:'jip',parameterCount
 await saveNativeAlignedImage(loaded,loaded,jipFit,'ct','mri',activity,()=>{})
 const jipBytes=gunzipSync(new Uint8Array(await (saved as Blob).arrayBuffer())),jipHead=nifti.readHeader(jipBytes.buffer),jipOutput=new Float32Array(nifti.readImage(jipHead,jipBytes.buffer))
 for(let z=0;z<23;z++)for(let y=0;y<21;y++)for(let x=0;x<18;x++){const i=x+19*(y+21*z);assert(Math.abs(jipOutput[i]-vals[i+1])<1e-4,'Native JIP pull must shift one original voxel in physical X')}
+// The real controller must dispatch large native sources and a whole-byte RAM
+// allowance; actual large-file numerical fidelity is checked by native-paging.
+let largeRequest:any
+Object.assign(globalThis,{Worker:class{onmessage:any;onerror:any;postMessage(data:any){largeRequest=data;queueMicrotask(()=>this.onmessage?.({data:{type:'result',blob:new Blob(['test-result'])}}))}terminate(){}}})
+const huge={...loaded,native:{...loaded.native,info:{...info,dims:[944,776,1535],bytesPerVoxel:2,datatype:4}}}
+assert.equal(await saveNativeAlignedImage(huge,loaded,fit,'ct','mri',activity,()=>{}),true)
+assert(largeRequest.info.dims.reduce((a:number,b:number)=>a*b,4)>1.5*1024**3);assert.equal(largeRequest.raw,undefined);assert(Number.isSafeInteger(largeRequest.nativeBufferBudgetBytes));assert(largeRequest.nativeBufferBudgetBytes<=8*1024**3)
 dom.window.close();console.log('Exact native export worker/controller: native input fidelity despite altered working voxels, native reference grid, no fixed payload, progress, cancellation and no partial destination save passed.')

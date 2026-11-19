@@ -9,7 +9,10 @@ export async function inspectVolume(file:Blob&{name?:string}):Promise<VolumeInfo
  try{while(count<544){const {value,done}=await reader.read();if(done)break;const take=value.subarray(0,544-count);parts.push(take);count+=take.length}}finally{await reader.cancel().catch(()=>{})}
  const bytes=new Uint8Array(count);let at=0;for(const part of parts){bytes.set(part,at);at+=part.length}
  // Ignore extensions for metadata inspection; their payload is not part of the image geometry.
- const clean=bytes.slice();const view=new DataView(clean.buffer);const n1=view.getInt32(0,true)===348||view.getInt32(0,false)===348;const extension=n1?348:540;if(clean.length>extension)clean[extension]=0
+ const clean=bytes.slice();if(clean.length<4)throw Error(`${file.name??'Selected image'} contains no complete NIfTI header (${clean.length} decompressed bytes). Copy or export the image again.`)
+ const view=new DataView(clean.buffer),sizeLE=view.getInt32(0,true),sizeBE=view.getInt32(0,false),n1=sizeLE===348||sizeBE===348,n2=sizeLE===540||sizeBE===540
+ if(!n1&&!n2)throw Error(`${file.name??'Selected image'} is not a valid NIfTI-1 or NIfTI-2 image`)
+ const extension=n1?348:540;if(clean.length<extension)throw Error(`${file.name??'Selected image'} has a truncated NIfTI header: expected ${extension} bytes, found ${clean.length}`);if(clean.length>extension)clean[extension]=0
  const h=nifti.readHeader(clean.buffer,true);const dims=h.dims.slice(1,4).map(Number) as Dims3
  if(!dims.every(v=>Number.isSafeInteger(v)&&v>0&&v<=65535)||!Number.isSafeInteger(voxels(dims)))throw Error('Invalid or oversized image dimensions')
  const affine=h.affine.map(row=>row.map(Number)),units=h.xyzt_units&7;if(![0,1,2,3].includes(units))throw Error('Unsupported spatial units');const factor=units===1?1000:units===3?.001:1;for(let r=0;r<3;r++)for(let c=0;c<4;c++)affine[r][c]*=factor;validateAffine(affine)
