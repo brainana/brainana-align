@@ -1,3 +1,7 @@
+Open saved sessions · 0.18.2
+
+Open saved session from the home screen or toolbar now reopens the original images and restores the saved working resolution, processing and alignment. If a file has moved, select its current location when prompted. New sessions save original local file paths; older sessions also look beside the JSON file. Original image files are not embedded in the session. Browser runtimes ask for source-file selection.
+
 Native export update · 0.18.1
 
 Native NIfTI export now reads source voxels in encoded chunks or cached pages and resamples tiled output, removing the former 1.5 GiB native input-array cutoff. Native geometry, interpolation and processing rules are preserved. The working-image allocation limit remains separate. See Documentation/CHANGELOG.md and Validation/REPORT.json in the release bundle.

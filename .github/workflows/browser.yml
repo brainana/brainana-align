@@ -17,6 +17,7 @@ jobs:
       - run: node node_modules/playwright-core/cli.js install --with-deps chromium firefox webkit
       - run: npm run test:browser
       - run: npm run test:native-export-browser
+      - run: npm run test:session-browser
       - run: npm run test:browser-matrix
         env:
           BRAINANA_REQUIRE_BROWSER_ENGINES: chromium,firefox,webkit
@@ -27,3 +28,4 @@ jobs:
           path: |
             browser-engine-results.json
             artifacts/validation/native-export-browser.json
+            artifacts/validation/session-browser.json

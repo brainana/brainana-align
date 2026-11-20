@@ -40,7 +40,7 @@ export async function runDesktop(options) {
     await app.whenReady()
     installDataSourceActions({window:()=>win,canConnect:!!connectRemote,connect:()=>switchTo(signal=>connectRemote({window:win,signal}))})
     installPreferenceStorage({directory:app.getPath('userData'),window:()=>win})
-    await options.installDomainActions?.({window:()=>win})
+    await options.installDomainActions?.({window:()=>win,fileAccess:()=>boot?.grantFiles})
     boot=await local();win=createMainWindow(boot.url,{appLabel})
     watch(boot)
     applyAppMenu({appLabel,window:()=>win,connectRemote:connectRemote?()=>switchTo(signal=>connectRemote({window:win,signal})):null,returnLocal:()=>switchTo(local)})

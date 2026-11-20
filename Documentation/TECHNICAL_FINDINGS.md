@@ -1,3 +1,10 @@
+# 0.18.2 · sessions must reopen their image references
+
+The previous loader checked saved geometry against an empty workspace and misleadingly offered landmarks only. A session saved valid image signatures but no image paths, so welcome-screen Open saved session could not perform the operation its label implied. The new full-session path stages validated sources and working data before state publication; only genuinely incomplete legacy image references retain an explicitly labeled landmarks-only import.
+
+Save original working geometry from `processing.base`, not cropped output dimensions. Restore explicit saved dimensions rather than recomputing them from rounded effective spacing; preserve voxel-center endpoints and physical affines through `workingGrid`'s optional exact dimensions. Use the same original-data projection, mask/paint rules and nonlinear map as ordinary preparation/export. Niivue scenes contain callback functions: rollback snapshots copy data fields only, preserving live callbacks. Session/recovery opening owns its activity/cancel listener and cannot terminate another operation. Never JSON-serialize a disk-range descriptor or runtime token into a session.
+
+
 # 0.18.1 · artificial native export cutoff
 
 The export controller rejected any native moving input whose hypothetical Float32 array exceeded1.5GiB. The worker then called prepareVolume at native spacing, even when registration used a smaller working image. Thus reducing working resolution could not avoid the native allocation. This was an export architecture restriction, not a NIfTI format limit.

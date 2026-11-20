@@ -1,4 +1,5 @@
 import {createNetworkBrowser} from './networkBrowser.mjs'
+import {serveSessionImage} from './sessionImageFiles.mjs'
 import {replaceWithBackup} from './replaceWithBackup.mjs'
 import http from 'node:http'
 import fs from 'node:fs'
@@ -391,6 +392,7 @@ export function runServerCli(options) {
       const url = new URL(req.url, `http://${host}`)
       if (url.pathname.startsWith('/api/')) {
         if (!validateApiRequest(req, res)) return
+        if (await serveSessionImage(req,res,url,arg('--session-image-grants',''))) return
         if (await networkBrowser.handle(req,res,url)) return
         if (url.pathname === '/api/health') {
           if (!requireMethod(req, res, ['GET'])) return

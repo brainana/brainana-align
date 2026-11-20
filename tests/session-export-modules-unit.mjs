@@ -7,7 +7,7 @@ const read = name => fs.readFileSync(path.join(root, 'apps/align', 'src', name),
 const sessions = read('sessionPersistence.ts')
 const exports = read('exportArtifacts.ts')
 const main = read('main.ts')
-assert.match(sessions, /SESSION_SCHEMA_VERSION = 13/)
+assert.match(sessions, /SESSION_SCHEMA_VERSION = 14/)
 assert.match(sessions, /payload\.savedAt \?\? payload\.saved_at/)
 assert.match(sessions, /payload\.appVersion \?\? payload\.version/)
 assert.match(sessions, /schemaVersion > SESSION_SCHEMA_VERSION/)

@@ -1,3 +1,8 @@
+# 0.18.2 · saved workspace reopening
+
+Open saved session is a complete entry point from welcome or the toolbar. It reopens original local files or mounted-share files, prompts for missing locations, restores saved resolution/frames and processing, then applies the saved registration without running an optimizer. Filename-only older sessions can find images beside the session JSON. Browser/file-access-restricted runtimes require source selection. Network-only inputs without a reusable local file location can still be loaded through the existing network browser before restoring their matching session.
+
+
 # 0.18.1 · large input export
 
 Native export retains the same user-selected image source, FoV, native/working/custom spacing, interpolation, direction and complete nonlinear transformation. It reads native samples through bounded cached pages instead of applying the working-array allocation limit to export. Native mask/crop/edit projection and native image intensities are preserved; display contrast remains viewing-only. Large compressed input backing and output storage remain explicit planning costs.

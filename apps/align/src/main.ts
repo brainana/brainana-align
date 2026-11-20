@@ -11,7 +11,7 @@ import {cloneFitState} from './fitSnapshot'
 import {installJipRegistration} from './jipRegistrationUI'
 import {installLandmarkList} from './landmarkList'
 import {installWelcomeScreen} from './welcomeScreen'
-import {imageLabel,imageKey,getRegistrationPairing,imagingText} from './registrationPairing'
+import {imageLabel,imageKey,getRegistrationPairing,setRegistrationPairing,imagingText} from './registrationPairing'
 import {resetInitialAlignment,rejectLegacyRefinement} from './resetInitialAlignment'
 import {installOpacityCycle} from './opacityCycle'
 import {installAlignedExportOptions,readAlignedExportOptions} from './alignedExportOptions'
@@ -25,6 +25,9 @@ import {installDisplayIntensity} from './displayIntensity'
 import {processingViewPoint} from './imageProcessing'
 import {installInitialProcessing} from './initialProcessingUI'
 import {installImagePreparation} from './imagePreparation'
+import {prepareSessionWorkspace} from './sessionWorkspace'
+import {sessionCancelled} from './sessionFileAccess'
+import type {SessionPayload} from './sessionPersistence'
 import {sharedViewerImage,nativeGeometry} from './volumeImages'
 import {saveNativeAlignedImage} from './nativeExport'
 import {hasLandmarkBasis,isLocalRegistration,installSharedRegionControls} from './registrationWorkflow'
@@ -260,12 +263,12 @@ function matchesSupportedExtension(name: string): boolean {
 let pairingUI:ReturnType<typeof installWelcomeScreen>|undefined
 let preparation:ReturnType<typeof installImagePreparation>
 async function loadFiles(modality:Modality,files:File[],fromDisk=false){if(!files.length)return;if(!files.some(file=>matchesSupportedExtension(file.name)))throw Error('Unsupported image format');await preparation.select(modality,files,fromDisk)}
-async function commitPrepared(items:Record<Modality,Loaded>,changed:Modality[],reason:'preparation'|'processing'='preparation'){
+async function commitPrepared(items:Record<Modality,Loaded>,changed:Modality[],reason:'preparation'|'processing'|'session'='preparation'){
  if(sourcePreview)manualUI?.stopPreview()
  const old={...loaded},oldFit=fitResult,oldWindows=structuredClone(optimizationWindows),oldMm=structuredClone(currentMm),oldLandmarks=structuredClone(landmarks)
  try{
   for(const modality of ['mri','ct'] as Modality[]){if(items[modality]===old[modality])continue;loaded[modality]=items[modality];if(sourceViewerNeedsReload(old[modality],items[modality]))for(const view of Object.values(views[modality])){while(view.nv.volumes.length)view.nv.removeVolumeByIndex(0);view.nv.addVolume(sharedViewerImage(items[modality].nvImage))}if(changed.includes(modality)){optimizationWindows[modality]={};currentMm[modality]=applyAffine(items[modality].raw.affine,items[modality].raw.dims.map(n=>(n-1)/2) as Vec3)}if(old[modality]&&currentMm[modality]&&(old[modality]!.processing||items[modality].processing))currentMm[modality]=processingViewPoint(old[modality]!.raw,items[modality].raw,currentMm[modality]!,items[modality].processing?.recipe.crop??null,items[modality].processing?.focus??applyAffine(items[modality].raw.affine,items[modality].raw.dims.map(n=>(n-1)/2) as Vec3));gotoMm(modality,currentMm[modality]!);setImagePlaceholder(modality,'hidden');document.querySelector(`#${modality}-name`)!.textContent=items[modality].name;document.querySelector<HTMLElement>(`#${modality}-name`)!.closest('label')!.title=`Current ${imageLabel(modality)}: ${items[modality].name}`;void rememberDataset(modality,items[modality].name).catch(()=>{})}
-  await finishWorkingImageCommit(reason,changed,Boolean(fitResult)&&(['mri','ct'] as Modality[]).some(m=>old[m]?.raw!==items[m].raw),{clearFit,refreshOverlay:()=>buildReview(true),invalidateOverlay:invalidateProcessedOverlay});updateWindowControls();renderAll()
+  if(reason!=='session')await finishWorkingImageCommit(reason,changed,Boolean(fitResult)&&(['mri','ct'] as Modality[]).some(m=>old[m]?.raw!==items[m].raw),{clearFit,refreshOverlay:()=>buildReview(true),invalidateOverlay:invalidateProcessedOverlay});updateWindowControls();renderAll()
  }catch(error){loaded.mri=old.mri;loaded.ct=old.ct;fitResult=oldFit;landmarks=oldLandmarks;if(oldFit)fitSummary.innerHTML=fitSummaryHtml(oldFit);optimizationWindows=oldWindows;currentMm.mri=oldMm.mri;currentMm.ct=oldMm.ct;for(const m of ['mri','ct'] as Modality[])for(const view of Object.values(views[m])){while(view.nv.volumes.length)view.nv.removeVolumeByIndex(0);if(old[m])view.nv.addVolume(sharedViewerImage(old[m]!.nvImage))}for(const m of ['mri','ct'] as Modality[]){document.querySelector(`#${m}-name`)!.textContent=old[m]?.name??`Select ${imageLabel(m)}`;document.querySelector<HTMLElement>(`#${m}-name`)!.closest('label')!.title=old[m]?`Current ${imageLabel(m)}: ${old[m]!.name}`:`Select ${imageLabel(m)}`;setImagePlaceholder(m,old[m]?'hidden':'empty');if(old[m]&&oldMm[m])gotoMm(m,oldMm[m]!)}updateWindowControls();if(oldFit){if(reason==='processing')invalidateProcessedOverlay();else await buildReview(true).catch(()=>clearReview())}renderAll();throw error}
 }
 
@@ -377,6 +380,7 @@ function renderAllNow() {
   displayIntensity?.refresh()
   thresholdMasks?.refresh()
   generatedExports?.refresh()
+  document.querySelector<HTMLButtonElement>('#save-session')!.disabled=!loaded.mri&&!loaded.ct&&!landmarks.length
   document.querySelector<HTMLButtonElement>('#export-open')!.disabled=!loaded.mri&&!loaded.ct
   renderMarkers('mri')
   renderMarkers('ct')
@@ -483,6 +487,11 @@ async function buildReview(allowBusy=false,interactive=false) {
     if(!reviewScheduler.isCurrent(task.generation)||fitResult!==originalFit||loaded[movingModality]!==moving||loaded[fixedModality]!==fixed)return
     aligned=makeResampledImage(moving,fixed,reverse?invertAffine(candidate.matrix):candidate.matrix,task.result)
   }catch(error){if(outcome==='completed')outcome='failed';document.querySelector('#refresh-processed-overlay')!.classList.remove('hidden');document.querySelector('#review-label')!.textContent=`Overlay refresh ${outcome==='cancelled'?'cancelled':'failed'}${reviewImages?'; showing the previous display':''}`;setStatus(error instanceof Error?error.message:String(error),true);if(allowBusy)throw error;return}finally{if(blocking&&cancelWasHidden&&activity.id===activityId)cancel.classList.add('hidden');if(ownActivity){activity.end(outcome,activityId);manualUI?.refresh();automaticUI?.refresh();jipUI?.refresh();itkUI?.refresh();acquisitionUI?.refresh()}}
+  publishReview(fixed,movingModality,fixedModality,candidate,aligned)
+}
+
+function publishReview(fixed:Loaded,movingModality:Modality,fixedModality:Modality,candidate:FitState,aligned:NVImage){
+  const reverse=movingModality!==registrationModalities(candidate.direction).moving
   document.querySelector('#refresh-processed-overlay')!.classList.add('hidden')
   const previousFixed=reviewImages?.fixed??null
   reviewImages = { fixed: fixed.nvImage, moving: aligned, fixedModality, movingModality,fit:candidate }
@@ -490,7 +499,7 @@ async function buildReview(allowBusy=false,interactive=false) {
     replaceReviewVolumes(view.nv,fixed.nvImage,aligned,previousFixed)
   }
   manualPreviewBase=reviewImages
-  document.querySelector('#review-label')!.textContent = `${imageLabel(movingModality)} aligned to ${imageLabel(fixedModality)}${reverse?' · export '+(fitResult.direction==='ct-mri'?imageLabel('ct')+' → '+imageLabel('mri'):imageLabel('mri')+' → '+imageLabel('ct')):''}${fitResult.landmarksChanged ? ' · using saved landmark snapshot' : ''}`
+  document.querySelector('#review-label')!.textContent = `${imageLabel(movingModality)} aligned to ${imageLabel(fixedModality)}${reverse?' · export '+(candidate.direction==='ct-mri'?imageLabel('ct')+' → '+imageLabel('mri'):imageLabel('mri')+' → '+imageLabel('ct')):''}${candidate.landmarksChanged ? ' · using saved landmark snapshot' : ''}`
   document.querySelectorAll('.review-placeholder').forEach(el => el.classList.add('hidden'))
   displayIntensity?.apply()
   applyReviewAppearance()
@@ -697,56 +706,82 @@ async function saveSessionFile() {
   setStatus('Session saved.')
 }
 
-async function loadSessionFile(file: File) {
-  const payload = parseSessionPayload(JSON.parse(await file.text()))
-  const mismatch = sessionGeometryMismatches(payload.images, loaded,payload.processing)
-  let restoreFit = true
-  if (mismatch.length) {
-    restoreFit = false
-    const ok = window.confirm(`Image geometry does not match the saved session:\n\n${mismatch.join('\n')}\n\nLoad landmarks only?`)
-    if (!ok) return false
-  }
-  if (restoreFit && payload.fit && !confirmReflectedTransform(payload.fit, 'restore and apply')) return false
-  if(restoreFit){if(!await activity.begin('Restoring image processing…','processing'))return false;document.querySelector('#alignment-cancel')!.classList.remove('hidden');try{await initialProcessing!.restore(payload.processing??{})}finally{document.querySelector('#alignment-cancel')!.classList.add('hidden');activity.end()}}
-  if(restoreFit)for(const m of ['mri','ct'] as Modality[])if(loaded[m])loaded[m]!.acquisition=payload.images[m]?.acquisition
-  acquisitionUI?.refresh()
-  if(restoreFit||(!loaded.mri&&!loaded.ct))pairingUI?.restore(payload.registrationPairing)
+function applySessionMetadata(payload:SessionPayload,restoreFit:boolean){
   snapshot()
-  landmarks = structuredClone(payload.landmarks)
-  selectedId = payload.selectedId
-  nextId = Math.max(payload.nextId, ...landmarks.map(landmark => landmark.id + 1), 1)
-  directionSelect.value = payload.direction
-  document.querySelector<HTMLSelectElement>('#landmark-transform')!.value = (payload.landmarkModel ?? payload.fit?.model)==='spline'?'rigid':payload.landmarkModel ?? payload.fit?.model ?? 'rigid'
+  landmarks=structuredClone(payload.landmarks);selectedId=payload.selectedId
+  nextId=Math.max(payload.nextId,...landmarks.map(landmark=>landmark.id+1),1)
+  directionSelect.value=payload.direction
+  const model=payload.landmarkModel??payload.fit?.model??'rigid'
+  document.querySelector<HTMLSelectElement>('#landmark-transform')!.value=['spline','jip'].includes(model)?'rigid':model
   document.querySelector<HTMLInputElement>('#spline-smoothing')!.value=String(payload.splineSmoothing??(payload.fit?.nonlinear?.kernel==='3d-polyharmonic-r'?payload.fit.nonlinear.smoothing:undefined)??.01)
-  updateSplineControls()
-  optimizationWindows = sanitizeOptimizationWindows(structuredClone(payload.optimizationWindows))
-  updateWindowControls()
-  if (restoreFit && payload.fit && loaded.mri && loaded.ct) {
-    clearSourcePreview();manualReviewTarget=payload.fit?.manualAffine?.selected??null
-    fitResult = cloneFitState(payload.fit)
-    if (!fitResult.landmarkSnapshot) fitResult.landmarkSnapshot = structuredClone(payload.landmarks)
-    if (fitResult.landmarksChanged === undefined) fitResult.landmarksChanged = false
-    if (!fitResult.fittedAt) fitResult.fittedAt = payload.savedAt
-    saveAligned.disabled = false
-    saveTransform.disabled = false
-    resetManual.disabled = false
-    resetLandmark.disabled = false
-    refineButton.disabled = false
-    restoreAlignmentLandmarks.disabled = false
-    document.querySelector<HTMLButtonElement>('#export-open')!.disabled = false
+  optimizationWindows=sanitizeOptimizationWindows(structuredClone(payload.optimizationWindows))
+  fitResult=restoreFit&&payload.fit?cloneFitState(payload.fit):null
+  manualReviewTarget=fitResult?.manualAffine?.selected??null
+  if(fitResult){
+    fitSummary.innerHTML=fitSummaryHtml(fitResult)
+    for(const button of [saveAligned,saveTransform,resetManual,resetLandmark,refineButton,restoreAlignmentLandmarks])button.disabled=false
+    refineActions.classList.toggle('hidden',!fitResult.proposal)
+    if(fitResult.proposal)refineSummary.textContent='Saved registration proposal restored. Review, then accept or reject before exporting.'
     updateNudgeOutputs()
-    const restored=fitResult
-    await buildReview(true)
-    if(fitResult!==restored)return false
-    fitSummary.innerHTML = fitSummaryHtml(fitResult)
-    refineActions.classList.toggle('hidden', !fitResult.proposal)
-    if (fitResult.proposal) refineSummary.textContent = 'Saved refinement proposal restored. Review, then accept or reject before exporting.'
-  } else {
-    clearFit()
+  }else clearFit()
+  updateSplineControls();updateWindowControls()
+}
+
+let sessionLoading=false
+async function loadSessionFile(file:File){
+  if(sessionLoading||activity.busy)throw Error('Wait for the current operation or cancel it before opening a session.')
+  sessionLoading=true
+  try{return await openSessionFile(file)}finally{sessionLoading=false}
+}
+async function openSessionFile(file:File){
+  const payload=parseSessionPayload(JSON.parse(await file.text()))
+  if(activity.busy)throw Error('Wait for the current operation before opening a session.')
+  if(!payload.images.mri||!payload.images.ct){
+    const mismatch=sessionGeometryMismatches(payload.images,loaded,payload.processing)
+    if(!window.confirm(`This file has incomplete original-image references. It can restore landmarks only.\n\n${mismatch.join('\n')}\n\nImport landmarks only?`))return false
+    applySessionMetadata(payload,false)
+    if(!loaded.mri&&!loaded.ct)pairingUI?.restore(payload.registrationPairing)
+    renderAll();setStatus('Landmarks restored; fit was not restored.');return true
   }
-  renderAll()
-  setStatus(restoreFit && payload.fit ? 'Full session restored.' : 'Landmarks restored; fit was not restored.')
-  return true
+  if(payload.fit&&!confirmReflectedTransform(payload.fit,'restore and apply'))return false
+  const abort=new AbortController(),cancel=document.querySelector<HTMLButtonElement>('#alignment-cancel')!,welcome=document.querySelector<HTMLElement>('#welcome-screen')!
+  const stop=()=>abort.abort();let ownActivity:number|null=null,publishing=false,outcome:'completed'|'cancelled'|'failed'='completed'
+  const old={pairing:getRegistrationPairing(),loaded:{...loaded},fit:fitResult,landmarks:structuredClone(landmarks),selectedId,nextId,history:[...history],windows:structuredClone(optimizationWindows),mm:structuredClone(currentMm),direction:directionSelect.value,model:document.querySelector<HTMLSelectElement>('#landmark-transform')!.value,smoothing:document.querySelector<HTMLInputElement>('#spline-smoothing')!.value,review:reviewImages,manualTarget:manualReviewTarget,manualPreview:manualPreviewBase,reviewLabel:document.querySelector('#review-label')!.textContent,summary:refineSummary.textContent,preview:document.querySelector<HTMLInputElement>('#manual-source-preview')!.checked,scenes:[...Object.values(views.mri),...Object.values(views.ct),...Object.values(reviewViews)].map(v=>Object.fromEntries(Object.entries(v.nv.scene).filter(([,value])=>typeof value!=='function').map(([key,value])=>[key,structuredClone(value)])))}
+  try{
+    if(!await activity.begin('Opening saved session and locating original images…','preparation'))return false
+    ownActivity=activity.id;welcome.inert=true;cancel.classList.remove('hidden');cancel.textContent='Cancel opening session';cancel.addEventListener('click',stop)
+    const items=await prepareSessionWorkspace(file,payload,loaded,abort.signal,text=>{void activity.phase(text)})
+    let review:{moving:Modality;fixed:Modality;aligned:NVImage}|null=null
+    if(payload.fit){
+      const moving=payload.fit.manualAffine?.selected??registrationModalities(payload.fit.direction).moving,fixed:Modality=moving==='ct'?'mri':'ct',reverse=moving!==registrationModalities(payload.fit.direction).moving
+      const raw=await runOverlayTask({source:items[moving].raw,target:items[fixed].raw,fit:payload.fit,reverse},abort.signal,text=>{void activity.phase(text)})
+      review={moving,fixed,aligned:makeResampledImage(items[moving],items[fixed],reverse?invertAffine(payload.fit.matrix):payload.fit.matrix,raw)}
+    }
+    if(abort.signal.aborted)throw sessionCancelled()
+    // No await that performs data work after this point: publish the staged pair,
+    // saved state and already-computed overlay as one application transaction.
+    publishing=true;setRegistrationPairing(payload.registrationPairing);fitResult=null;clearReview()
+    await commitPrepared(items,['mri','ct'],'session')
+    applySessionMetadata(payload,true)
+    if(review&&fitResult)publishReview(items[review.fixed],review.moving,review.fixed,cloneFitState(fitResult),review.aligned)
+    pairingUI?.restore(payload.registrationPairing)
+    initialProcessing?.resetSession();preparation.adopt(items);acquisitionUI?.refresh()
+    renderAll();setStatus('Full session restored.');return true
+  }catch(error){
+    outcome=abort.signal.aborted||(error as Error)?.name==='AbortError'?'cancelled':'failed'
+    if(publishing){
+      setRegistrationPairing(old.pairing);loaded.mri=old.loaded.mri;loaded.ct=old.loaded.ct;fitResult=old.fit;landmarks=old.landmarks;selectedId=old.selectedId;nextId=old.nextId;history=old.history;optimizationWindows=old.windows;currentMm.mri=old.mm.mri;currentMm.ct=old.mm.ct;manualReviewTarget=old.manualTarget
+      directionSelect.value=old.direction;document.querySelector<HTMLSelectElement>('#landmark-transform')!.value=old.model;document.querySelector<HTMLInputElement>('#spline-smoothing')!.value=old.smoothing
+      for(const m of ['mri','ct'] as Modality[]){for(const view of Object.values(views[m])){while(view.nv.volumes.length)view.nv.removeVolumeByIndex(0);if(loaded[m])view.nv.addVolume(sharedViewerImage(loaded[m]!.nvImage))}document.querySelector(`#${m}-name`)!.textContent=loaded[m]?.name??`Select ${imageLabel(m)}`;setImagePlaceholder(m,loaded[m]?'hidden':'empty');if(old.mm[m])gotoMm(m,old.mm[m]!)}
+      if(old.fit){fitSummary.innerHTML=fitSummaryHtml(old.fit);for(const button of [saveAligned,saveTransform,resetManual,resetLandmark,refineButton,restoreAlignmentLandmarks])button.disabled=false;updateNudgeOutputs()}else clearFit()
+      if(old.review)publishReview(loaded[old.review.fixedModality]!,old.review.movingModality,old.review.fixedModality,old.review.fit,old.review.moving)
+      else clearReview()
+      reviewImages=old.review;manualPreviewBase=old.manualPreview;document.querySelector('#review-label')!.textContent=old.reviewLabel;refineSummary.textContent=old.summary;refineActions.classList.toggle('hidden',!old.fit?.proposal);document.querySelector<HTMLInputElement>('#manual-source-preview')!.checked=old.preview;updateSourcePreview()
+      const all=[...Object.values(views.mri),...Object.values(views.ct),...Object.values(reviewViews)];all.forEach((view,i)=>{Object.assign(view.nv.scene,old.scenes[i]);view.nv.drawScene()});updateWindowControls();updateSplineControls();renderAll()
+    }
+    if(outcome==='cancelled'){setStatus('Session opening cancelled. Current workspace preserved.');return false}
+    throw error
+  }finally{if(ownActivity!==null){welcome.inert=false;cancel.removeEventListener('click',stop);cancel.classList.add('hidden');activity.end(outcome,ownActivity)}renderAll()}
 }
 
 async function saveTransformFiles() {

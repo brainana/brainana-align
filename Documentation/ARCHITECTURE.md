@@ -1,3 +1,10 @@
+# 0.18.2 · session image reopening
+
+`sessionWorkspace.ts` stages source validation, exact working grids, frame selection and existing preprocessing workers. The composition root publishes the staged pair and full-map overlay transactionally. `sessionFileAccess.ts` owns source-location metadata and browser fallback prompts. The native desktop locator reads a bounded JSON prefix before large nonlinear fields, resolves saved paths or sibling files and invokes the native picker for missing sources.
+
+`core-launcher/sessionFileGrants.mjs` writes a private, bounded registry for its owned server. `core-server/sessionImageFiles.mjs` serves only these immutable file identities after ordinary same-origin/session-token authentication; HTTP callers cannot register paths, and the normal browsing-root guard is unchanged. `core-client/rangeFile.ts` exposes bounded file reads and serializable worker descriptors without eagerly copying native data. Session JSON contains source locations only, never runtime IDs, URLs or authentication tokens.
+
+
 # 0.18.1 · paged native export
 
 `nativeVoxelSource.ts` owns scalar native I/O: uncompressed files can be range-read directly; gzip streams are unpacked in 8 MiB chunks. Native data retain their original scalar encoding. The fast path keeps8MiB encoded chunks within an allowance derived from installed RAM (one third, capped at8GiB); large gzip inputs can instead use Blob backing and bounded page reads. The default decoded-page cache is bounded at128MiB, with coalesced bounded reads and LRU eviction. Byte counts and indices use safe Number arithmetic, without signed 32-bit casts. Blob backing is browser-managed RAM/disk and remains part of capacity planning.

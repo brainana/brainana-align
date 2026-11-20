@@ -25,7 +25,7 @@ try{
  source.namespace.installPreferenceStorage({directory:folder,window:()=>win});assert.equal((await handlers.get('align-preferences-read')(event,'preferences')).theme,'dark','restart uses same user-data storage')
  await fs.writeFile(path.join(folder,'align-guide.json'),'{invalid');assert.equal(await handlers.get('align-preferences-read')(event,'guide'),null)
  // The actual preload exposes only the restricted preferences API; it never exports ipcRenderer or Node.
- let api;vm.runInNewContext(await fs.readFile(sourceFile('preload.cjs'),'utf8'),{require:name=>{assert.equal(name,'electron');return {contextBridge:{exposeInMainWorld:(name,value)=>{if(name==='brainanaPreferences')api=value;else assert(['brainanaDataSources','brainanaScientific'].includes(name))}},ipcRenderer:{invoke:(...args)=>args}}}})
+ let api;vm.runInNewContext(await fs.readFile(sourceFile('preload.cjs'),'utf8'),{require:name=>{assert.equal(name,'electron');return {contextBridge:{exposeInMainWorld:(name,value)=>{if(name==='brainanaPreferences')api=value;else assert(['brainanaDataSources','brainanaScientific','brainanaSessionFiles'].includes(name))}},ipcRenderer:{invoke:(...args)=>args}}}})
  assert.deepEqual(Object.keys(api).sort(),['chooseExportFolder','memory','read','write']);assert.deepEqual(Array.from(api.read('preferences')),['align-preferences-read','preferences'])
  console.log('Native preferences: trusted main-frame IPC, fixed keys, bounded atomic writes, restrictive file permissions, relaunch persistence, export-folder selection and isolated preload passed.')
 }finally{await fs.rm(folder,{recursive:true,force:true})}

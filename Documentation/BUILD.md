@@ -1,3 +1,8 @@
+# 0.18.2 · session restoration checks
+
+Run `npm run build`, `npm run test:session-files`, `npm run test:session-workspace` and `npm run test:session-browser`, then the full CI core/native groups and packaged proofs. The browser test requires Chromium (or `CHROMIUM_PATH`). With a native desktop/display available, run `npm run verify:session-desktop`; `ELECTRON_PATH` can select the architecture-matched Electron executable. This executes the actual sandboxed preload, native path extraction, compiled viewer and workers using software WebGL2. Picker invocations are real, but their returned selections are scripted; this does not certify interactive native-dialog appearance or physical GPU rendering.
+
+
 # 0.18.1 · native export checks
 
 Run `npm run build`, `npm run test:native-paging`, `npm run test:native-export-browser` and the full validation suite before packaging. The real browser test accepts `CHROMIUM_PATH` and a dist-directory argument and uses a temporary sparse image rather than private data. The emitted-worker test uses bounded64-bit filesystem ranges for its sparse fixture, avoiding a Node24 openAsBlob test-harness size-wrap bug. The source ZIP includes both tests and helpers. The scientific native runtime is reused unchanged; no new Python, ITK, JIP or GPU dependency is required for this export path.

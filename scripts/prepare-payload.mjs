@@ -8,7 +8,7 @@ export function preparePayload(root, target, nodes=[]) {
   fs.copyFileSync(path.join(root,'packaging/brainana-align-launcher'),path.join(contents,'MacOS/brainana-align-launcher'))
   fs.chmodSync(path.join(contents,'MacOS/brainana-align-launcher'),0o755)
   for(const name of ['version.mjs','version.env'])fs.copyFileSync(path.join(root,'apps/align',name),path.join(runtime,name))
-  for(const name of ['platformCore.mjs','sftpClient.mjs','replaceWithBackup.mjs','runtime.mjs','networkBrowser.mjs','networkSftpClient.mjs','knownHosts.mjs'])fs.copyFileSync(path.join(root,'packages/core-server',name),path.join(runtime,name))
+  for(const name of ['platformCore.mjs','sftpClient.mjs','replaceWithBackup.mjs','runtime.mjs','networkBrowser.mjs','networkSftpClient.mjs','knownHosts.mjs','sessionImageFiles.mjs'])fs.copyFileSync(path.join(root,'packages/core-server',name),path.join(runtime,name))
   for(const name of ['ssh2','asn1','bcrypt-pbkdf','safer-buffer','tweetnacl','streamsearch']) {const source=path.join(root,'node_modules',name);if(fs.existsSync(source))fs.cpSync(source,path.join(runtime,'node_modules',name),{recursive:true,filter:filename=>!filename.endsWith('.node')})}
   fs.copyFileSync(path.join(root,'packaging/runtime-command.sh'),path.join(runtime,'runtime-command.sh'))
   const cli=fs.readFileSync(path.join(root,'apps/align/server.mjs'),'utf8').replace('@brainana/core-server/runtime.mjs','./runtime.mjs')

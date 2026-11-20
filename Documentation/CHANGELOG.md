@@ -1,3 +1,10 @@
+# 0.18.2 · open complete sessions from the home screen · 2026-11-19
+
+Opening a saved session now locates its original images, reconstructs the saved working grids and selected frames, replays masks/crops/voxel edits, and restores the saved landmarks, physical optimization regions and complete registration. New sessions record original local file locations. Older sessions are also searched beside their JSON file. Missing or moved images open a native file browser; renamed originals are accepted after physical geometry validation and their new locations are saved next time. Browser sessions request explicit source-file selection.
+
+Restoration stages both images, preprocessing and the full-map overlay before replacing the workspace. Cancel, invalid images or a worker failure preserve the current data and alignment. Reopened native inputs remain disk-backed through authenticated range reads, including offsets above 4 GiB; neither image voxels nor temporary HTTP capabilities are embedded in session JSON. Schema 14 remains compatible with older schemas. The welcome screen and recovery/guide copy now explain this workflow. Registration algorithms and their default parameters are unchanged.
+
+
 # 0.18.1 · native image export above the working-array limit · 2026-11-19
 
 Removed the native export dependency on one full-size Float32 moving-image array. Native scalar NIfTI inputs now use chunked encoded storage within a RAM allowance, with cached range reads when inputs exceed that allowance. Output is resampled in spatial tiles and bounded strips, then compressed incrementally. This supports native images beyond the previous 1.5 GiB input-array cutoff, including 64-bit byte offsets. Working image allocation limits remain independent.

@@ -1,3 +1,10 @@
+# 0.18.2 · full session restoration qualification
+
+Required regressions cover old sibling-file lookup, saved paths, native missing-file selection and cancellation, schema migration, wrong-image retry, selected frames, exact saved grids, processing replay, immutable originals, failure/retry and authenticated range transport above 4 GiB. Actual compiled frontend tests start from welcome without selecting a pairing or loading images first, save the recovered state and re-export native pixels. The Electron qualification uses the real sandboxed preload and File path extraction, with scripted picker choices and software WebGL2.
+
+The release's Validation/REPORT.json records executed suites, package/source/signature checks, real-data checks and scope limits. Scientific registration code and its settings remain unchanged. Session metadata references original data; it does not embed or duplicate those files. Private subject files are excluded from source and release archives.
+
+
 # 0.18.1 · large native export qualification
 
 `test:native-paging` checks 32 datatype/endian/compression/frame combinations, original scaling and physical geometry, complete old/new exported arrays for nearest/linear/cubic, tiny-cache eviction and tile subdivision, nonlinear native preprocessing, NaN zero-weight behavior, truncation and cancellation. Its exact emitted-worker test reads real sparse file data beyond 4 GiB without a large native array. `test:native-export-browser` independently uses real Chrome File objects and the exact emitted worker, verifying every expected output voxel and bounded cache/read sizes. These are CPU/file/export tests; they do not imply GPU rendering certification.

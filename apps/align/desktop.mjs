@@ -5,6 +5,7 @@ import {app} from 'electron'
 import {runDesktop} from '@brainana/core-desktop/main.mjs'
 import {VERSION,BUILD_ID} from './version.mjs'
 import {installJipActions} from './desktop/jipActions.mjs'
+import {installSessionFiles} from './desktop/sessionFiles.mjs'
 import {connectWorkstation} from './desktop/workstation.mjs'
 const here=path.dirname(fileURLToPath(import.meta.url))
-runDesktop({installDomainActions:installJipActions,appLabel:'Brainana Align',version:VERSION,buildId:BUILD_ID,serverPath:path.join(here,'server.mjs'),connectRemote:process.platform==='darwin'&&app.isPackaged?connectWorkstation:null})
+runDesktop({installDomainActions:context=>{installJipActions(context);installSessionFiles(context)},appLabel:'Brainana Align',version:VERSION,buildId:BUILD_ID,serverPath:path.join(here,'server.mjs'),connectRemote:process.platform==='darwin'&&app.isPackaged?connectWorkstation:null})

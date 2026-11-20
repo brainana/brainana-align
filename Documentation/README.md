@@ -1,4 +1,4 @@
-# Brainana Align 0.18.1
+# Brainana Align 0.18.2
 
 See the [project overview](../README.md), [software credits and scientific references](../docs/software-credits.md),
 and [JIP provenance, repairs and integration changes](../docs/jip-changes.md).

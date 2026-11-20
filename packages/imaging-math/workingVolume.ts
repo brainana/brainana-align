@@ -23,18 +23,19 @@ export async function inspectVolume(file:Blob&{name?:string}):Promise<VolumeInfo
  const payloadBytes=voxels(dims)*frames*bytesPerVoxel;if(!Number.isSafeInteger(payloadBytes)||!Number.isSafeInteger(payloadBytes+h.vox_offset))throw Error('Image byte count is not safely representable');if(!(new Uint8Array(await file.slice(0,2).arrayBuffer())[0]===31)&&file.size<h.vox_offset+payloadBytes)throw Error('Image file is truncated');
  return {name:file.name??'volume.nii',fileBytes:file.size,dims,spacing,affine,frames,bytesPerVoxel,datatype:h.datatypeCode,littleEndian:h.littleEndian,offset:h.vox_offset,slope:h.scl_slope||1,intercept:h.scl_slope?(h.scl_inter||0):0,header:clean}
 }
-export function workingGrid(info:Pick<VolumeInfo,'dims'|'spacing'|'affine'>,requested:Dims3){
+export function workingGrid(info:Pick<VolumeInfo,'dims'|'spacing'|'affine'>,requested:Dims3,exactDims?:Dims3){
  if(!requested.every(v=>Number.isFinite(v)&&v>0))throw Error('Working spacing must be positive millimeters')
- const dims=info.dims.map((n,a)=>n===1?1:Math.max(2,Math.floor((n-1)/Math.max(1,requested[a]/info.spacing[a]))+1)) as Dims3
+ if(exactDims&&(!Array.isArray(exactDims)||exactDims.length!==3||exactDims.some((n,a)=>!Number.isSafeInteger(n)||n<1||n>info.dims[a]||(info.dims[a]>1&&n<2))))throw Error('Saved working dimensions cannot be reconstructed from this native image')
+ const dims=exactDims?[...exactDims] as Dims3:info.dims.map((n,a)=>n===1?1:Math.max(2,Math.floor((n-1)/Math.max(1,requested[a]/info.spacing[a]))+1)) as Dims3
  const scale=dims.map((n,a)=>n===1?1:(info.dims[a]-1)/(n-1)) as Dims3,affine=info.affine.map(row=>[...row]);for(let r=0;r<3;r++)for(let a=0;a<3;a++)affine[r][a]*=scale[a]
  return {dims,scale,affine,spacing:info.spacing.map((v,a)=>v*scale[a]) as Dims3}
 }
 /** Streaming separable triangular low-pass + decimation: never allocate the native volume.
  * Centers, world origin, axis directions and endpoint extents are preserved. Coarse native
  * axes are never upsampled. Precomputed normalized taps also handle clipped boundary kernels. */
-export async function prepareVolume(file:Blob,info:VolumeInfo,requested:Dims3,frame=0,progress:(n:number)=>void=()=>{}):Promise<RawNifti>{
+export async function prepareVolume(file:Blob,info:VolumeInfo,requested:Dims3,frame=0,progress:(n:number)=>void=()=>{},exactDims?:Dims3):Promise<RawNifti>{
  if(!Number.isInteger(frame)||frame<0||frame>=info.frames)throw Error('Selected frame is unavailable')
- const grid=workingGrid(info,requested),size=voxels(grid.dims);if(size*4>1536*1024**2)throw Error('Working array exceeds the 1.5 GiB allocation limit. Choose coarser spacing.')
+ const grid=workingGrid(info,requested,exactDims),size=voxels(grid.dims);if(size*4>1536*1024**2)throw Error('Working array exceeds the 1.5 GiB allocation limit. Choose coarser spacing.')
  const output=new Float32Array(size),taps=info.dims.map((count,a)=>{
   const s=grid.scale[a],n=grid.dims[a],sums=new Float64Array(n),lists=Array.from({length:count},(_,i)=>{const list:Array<[number,number]>=[];if(s===1){list.push([i,1]);sums[i]=1;return list}for(let j=Math.max(0,Math.ceil(i/s-1));j<=Math.min(n-1,Math.floor(i/s+1));j++){const w=Math.max(0,1-Math.abs(i-j*s)/s);if(w>0){list.push([j,w]);sums[j]+=w}}return list});for(const list of lists)for(const tap of list)tap[1]/=sums[tap[0]];return lists
  })

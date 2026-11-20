@@ -1,4 +1,5 @@
 import {validateLinearDefaults} from './linearDefaults'
+import {sourceFilePath} from './sessionFileAccess'
 import {validateLinearScoring} from '../../../packages/imaging-math/intensityRegistration'
 import {validateAcquisition,type AcquisitionMetadata} from './acquisitionMetadata'
 import {cloneFitState} from './fitSnapshot'
@@ -11,12 +12,14 @@ import { diagnoseTransform, isLandmarkModel, LANDMARK_MODELS, validateAffine } f
 import { invertAffine } from './roiWarp'
 import type { RegistrationModel, FitState, Landmark, Loaded, Modality, OptimizationWindows } from './appTypes'
 
-export const SESSION_SCHEMA_VERSION = 13
+export const SESSION_SCHEMA_VERSION = 14
 
 export type ImageSignature = {
   acquisition?:AcquisitionMetadata
   name: string
   sourceFiles: string[]
+  sourceLocations?: (string|null)[]
+  requestedSpacing?:[number,number,number]
   dims: [number, number, number]
   pixDims: [number, number, number]
   affine: number[][]
@@ -66,8 +69,10 @@ export function imageSignature(item: Loaded | null): ImageSignature | null {
     acquisition:item.acquisition?validateAcquisition(item.acquisition):undefined,
     name: item.name,
     sourceFiles: [...item.sourceFiles],
-    workingDims:[...item.raw.dims] as [number,number,number],
-    workingSpacing:[...item.raw.pixDims] as [number,number,number],
+    sourceLocations:item.native?.files.map(sourceFilePath),
+    requestedSpacing:item.native?.requested?[...item.native.requested]:undefined,
+    workingDims:[...source.dims] as [number,number,number],
+    workingSpacing:[...source.pixDims] as [number,number,number],
     selectedFrame:item.native?.frame??0,
     dims: [...(item.native?.info.dims??source.dims)] as [number, number, number],
     pixDims: [...(item.native?.info.spacing??source.pixDims)] as [number, number, number],
@@ -155,6 +160,13 @@ export function parseSessionPayload(value: unknown): SessionPayload {
   const fit = payload.fit ? normalizeFit(payload.fit, payload.landmarks) : null
   for (const signature of [payload.images?.mri, payload.images?.ct]) {
     if (!signature) continue
+    if(typeof signature.name!=='string'||signature.name.length>32768||signature.name.includes('\0'))throw Error('Invalid image name in session')
+    if(signature.selectedFrame!==undefined&&(!Number.isSafeInteger(signature.selectedFrame)||signature.selectedFrame<0))throw Error('Invalid selected image frame in session')
+    if(signature.sourceFiles!==undefined&&(!Array.isArray(signature.sourceFiles)||signature.sourceFiles.length>128||signature.sourceFiles.some(n=>typeof n!=='string'||n.length>32768||n.includes('\0'))))throw Error('Invalid source filenames in session')
+    signature.sourceFiles=signature.sourceFiles?.length?signature.sourceFiles:[signature.name]
+    if(signature.sourceLocations!==undefined&&(!Array.isArray(signature.sourceLocations)||signature.sourceLocations.length!==signature.sourceFiles.length||signature.sourceLocations.some(p=>p!==null&&(typeof p!=='string'||!p||p.length>32768||p.includes('\0')))))throw Error('Invalid original image locations in session')
+    for(const values of [signature.workingSpacing,signature.requestedSpacing])if(values!==undefined&&(!Array.isArray(values)||values.length!==3||!values.every(n=>Number.isFinite(n)&&n>0)))throw Error('Invalid working spacing in session')
+    if(signature.workingDims!==undefined&&(!Array.isArray(signature.workingDims)||signature.workingDims.length!==3||!signature.workingDims.every(n=>Number.isSafeInteger(n)&&n>0&&n<=65535)))throw Error('Invalid working dimensions in session')
     if(signature.acquisition!==undefined)signature.acquisition=validateAcquisition(signature.acquisition)
     validateAffine(signature.affine)
     if (!Array.isArray(signature.dims) || signature.dims.length !== 3 || !signature.dims.every(v => Number.isInteger(v) && v > 0) || !Array.isArray(signature.pixDims) || signature.pixDims.length !== 3 || !signature.pixDims.every(v => Number.isFinite(v) && v > 0)) throw new Error('Invalid image geometry in session')
@@ -200,7 +212,7 @@ export function sessionGeometryMismatches(
     const currentSignature = imageSignature(current[modality])
     const item=current[modality],r=processing[modality];if(item&&r&&(!geometryMatches(r.base,item.processing?.base??item.raw)||savedSignature?.name!==item.name))mismatch.push(`${modality.toUpperCase()}: processing requires the same dataset and original working grid (${r.base.dims.join(' × ')} voxels at ${r.base.pixDims.join(' × ')} mm). Prepare this resolution first.`)
     if (!savedSignature || !currentSignature) {
-      mismatch.push(`${modality.toUpperCase()}: saved or loaded image geometry is missing`)
+      mismatch.push(`${modality.toUpperCase()}: ${!savedSignature?'this session has no saved image geometry':'the original image has not been loaded'}`)
     } else {
       mismatch.push(...geometryDifference(savedSignature, currentSignature).map(issue => `${modality.toUpperCase()}: ${issue}`))
     }

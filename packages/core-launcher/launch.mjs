@@ -3,6 +3,7 @@ import fs from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { spawn } from 'node:child_process'
+import {sessionFileGrants} from './sessionFileGrants.mjs'
 
 export function validateHandshake(data) {
   if (!data || !Number.isInteger(data.port) || data.port < 1 || data.port > 65535 || !Number.isInteger(data.pid) || data.pid < 1 || !/^[a-f0-9]{64,}$/i.test(data.sessionToken)) throw new Error('Invalid server startup handshake')
@@ -13,7 +14,8 @@ export async function bootServer({serverPath, root=os.homedir(), cache, version,
   const scratch=await fs.mkdtemp(path.join(os.tmpdir(),'brainana-desktop-'))
   await fs.chmod(scratch,0o700)
   const handshake=path.join(scratch,'handshake.json'),errorFile=path.join(scratch,'error')
-  const args=['--host','127.0.0.1','--port','0','--root',root,'--cache',cache || path.join(scratch,'cache'),'--handshake-file',handshake,'--error-file',errorFile,...serverArgs]
+  const grants=path.join(scratch,'session-images.json'),grantFiles=sessionFileGrants(grants)
+  const args=['--host','127.0.0.1','--port','0','--root',root,'--cache',cache || path.join(scratch,'cache'),'--handshake-file',handshake,'--error-file',errorFile,'--session-image-grants',grants,...serverArgs]
   let child, exited=false, failure='', stopped=false
   const stop=async()=> {
     if(stopped)return
@@ -40,7 +42,7 @@ export async function bootServer({serverPath, root=os.homedir(), cache, version,
         if(child.pid!==data.pid || (version && data.version!==version) || (buildId && data.buildId!==buildId))throw new Error('Server startup identity mismatch')
         const response=await fetch(new URL('/api/health',url),{headers:{'x-brainana-session':data.sessionToken},signal:AbortSignal.timeout(2000)})
         if(!response.ok)throw new Error('Server startup health check failed')
-        return {url,child,stop,handshake:data}
+        return {url,child,stop,handshake:data,grantFiles}
       } catch(error) {
         if(error.code!=='ENOENT')throw error
       }

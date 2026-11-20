@@ -42,7 +42,7 @@ try{
  const worker=path.join(resources,'scientific-runtime','BrainanaAlignRegistration'+(platform==='win32'?'.exe':''))
  const scientific=JSON.parse(execFileSync(worker,['--align-capabilities'],{encoding:'utf8',timeout:60000}));assert.equal(scientific.runtime,'brainana-align-registration')
  const identity=JSON.parse(execFileSync(exe,['-p','JSON.stringify({arch:process.arch,version:process.version})'],{encoding:'utf8',timeout:60000,env:{...process.env,ELECTRON_RUN_AS_NODE:'1'}}));assert.equal(identity.arch,arch)
- for(const test of ['production-landmark-ui.mjs','viewer-rendering-regression.mts','linear-defaults-worker.mts','automatic-worker-ui-regression.mts','nonlinear-worker-regression.mts','native-export-worker-regression.mts','native-paging-regression.mts','initial-processing-regression.mts','threshold-mask-regression.mts','overlay-worker-regression.mts']){
+ for(const test of ['production-landmark-ui.mjs','viewer-rendering-regression.mts','linear-defaults-worker.mts','automatic-worker-ui-regression.mts','nonlinear-worker-regression.mts','native-export-worker-regression.mts','native-paging-regression.mts','session-workspace-regression.mts','initial-processing-regression.mts','threshold-mask-regression.mts','overlay-worker-regression.mts']){
   execFileSync(process.execPath,['--experimental-vm-modules','--import','tsx',path.join(root,'tests',test),scratch],{cwd:root,stdio:'inherit',timeout:180000})
  }
  execFileSync(process.execPath,['--experimental-vm-modules',path.join(root,'tests/jip-ipc-regression.mjs'),exe],{cwd:root,stdio:'inherit',timeout:180000})
