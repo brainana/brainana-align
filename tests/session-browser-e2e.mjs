@@ -9,12 +9,13 @@ import {startBrowserHarness} from './browser-harness.mjs'
 import {createSessionFixture} from './helpers/session-fixture.mjs'
 
 const require=createRequire(import.meta.url),{chromium}=require('playwright-core'),scratch=await fs.mkdtemp(path.join(os.tmpdir(),'align-browser-session-'))
-let browser,harness
+let browser,harness,page
+const errors=[]
 try{
  const {session,mri,ct,dims,matrix,mriAffine,values}=await createSessionFixture(path.join(scratch,'data'))
  harness=await startBrowserHarness()
  browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||chromium.executablePath(),headless:true,args:['--no-sandbox','--use-angle=swiftshader','--enable-unsafe-swiftshader','--disable-dev-shm-usage']})
- const page=await browser.newPage({viewport:{width:1540,height:980}}),errors=[];page.on('pageerror',e=>errors.push(e.message))
+ page=await browser.newPage({viewport:{width:1540,height:980}});page.on('pageerror',e=>errors.push(e.message))
  await page.goto(harness.url+'/#session='+'a'.repeat(64));await page.waitForSelector('#welcome-session');assert(await page.locator('#save-session').isDisabled())
  await page.setInputFiles('#load-session',session);await page.waitForSelector('#session-locate-modal')
  assert.equal(await page.locator('#welcome-screen').isVisible(),true,'Opening a session cannot discard the welcome state before images are ready')
@@ -32,4 +33,16 @@ try{
  assert.deepEqual(errors,[])
  const report={status:'passed',browser:await browser.version(),compiledFrontend:true,welcomeWithoutPairingSelection:true,explicitOriginalImagePickers:true,savedWorkingGrid:true,fiveLandmarksAndTransform:true,nativeExportAllPixelsExact:true,cancelPreservesPriorAlignment:true,rendering:'Software WebGL2; no physical GPU certification'}
  await fs.mkdir('artifacts/validation',{recursive:true});await fs.writeFile('artifacts/validation/session-browser.json',JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report,null,2))
+}catch(error){
+ // A software-WebGL runner can stall while restoring all nine viewers. Record
+ // the actual app state before teardown instead of hiding it behind a timeout.
+ let timer
+ try{
+  const state=await Promise.race([
+   page?.evaluate(()=>({status:document.querySelector('#status')?.textContent,ready:document.readyState,mri:document.querySelector('#mri-name')?.textContent,ct:document.querySelector('#ct-name')?.textContent,modals:[...document.querySelectorAll('.modal')].filter(e=>!e.hidden&&getComputedStyle(e).display!=='none').map(e=>({id:e.id,text:e.textContent.slice(0,2000)}))})),
+   new Promise(resolve=>{timer=setTimeout(()=>resolve('Browser did not answer diagnostic request within 5 seconds'),5000)}),
+  ])
+  console.error('Session browser failure diagnostics:',JSON.stringify({state,errors}))
+ }catch(diagnosticError){console.error('Session browser diagnostic request failed:',String(diagnosticError))}finally{clearTimeout(timer)}
+ throw error
 }finally{await browser?.close();await harness?.close();await fs.rm(scratch,{recursive:true,force:true})}
