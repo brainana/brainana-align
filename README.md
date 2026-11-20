@@ -36,10 +36,10 @@ coordinate space of the processed anatomy used by the pipeline.
 
 - **Landmark registration** — Fit rigid (6 parameters), similarity (7), independent
   axis-scale (9) or affine (12) transforms from paired anatomical points. Advanced
-  landmark splines support nonlinear fitting when needed.
+  landmark splines support nonlinear fitting when needed. An explicit checkbox controls whether a landmark fit may reflect anatomy, including rigid fits.
 - **Landmark refinement** — Make a constrained, image-based rigid adjustment to an
   accepted landmark alignment.
-- **Manual adjustment** — Adjust an alignment interactively and inspect the overlay.
+- **Manual adjustment** — Adjust an alignment interactively and inspect the overlay. A separate, reversible left–right flip targets the selected image on a linear alignment.
 - **Image-based registration** — Run automated linear registration independently
   of landmarks. Optional JIP or ITK nonlinear registration follows an accepted
   linear alignment.

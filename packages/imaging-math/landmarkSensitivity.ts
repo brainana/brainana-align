@@ -7,10 +7,10 @@ export type SensitivityModel=LandmarkModel|'spline'
 export const LANDMARK_SENSITIVITY_MIN_PAIRS={rigid:6,similarity:6,anisotropic:8,affine:8,spline:20} as const
 export const LANDMARK_SENSITIVITY_MAX_PAIRS={rigid:128,similarity:128,anisotropic:128,affine:128,spline:64} as const
 export type SensitivityPair={id:number;source:Vec3;target:Vec3}
-export type LandmarkSensitivityInput={model:SensitivityModel;pairs:readonly SensitivityPair[];smoothing?:number;probePoints?:readonly Vec3[]}
+export type LandmarkSensitivityInput={reflection?:'proper'|'require';model:SensitivityModel;pairs:readonly SensitivityPair[];smoothing?:number;probePoints?:readonly Vec3[]}
 export type OmissionSensitivity={id:number;valid:boolean;reason?:string;heldOutErrorMm?:number;rmsMappingChangeMm?:number;maximumMappingChangeMm?:number}
 export type LandmarkSensitivityReport={
- method:'leave-one-out-refit';status:'complete'|'unstable'|'unavailable';model:SensitivityModel;pairCount:number;minimumPairs:number;
+ method:'leave-one-out-refit';reflection?:'proper'|'require';status:'complete'|'unstable'|'unavailable';model:SensitivityModel;pairCount:number;minimumPairs:number;
  probeCount:number;probeLocations:'provided moving RAS points'|'fitted moving landmarks';sourceRadiusMm?:number;
  trainingRmsMm?:number;heldOutRmsMm?:number;maximumMappingChangeMm?:number;validOmissions:number;omissions:OmissionSensitivity[];
  reason?:string;warnings:string[]
@@ -26,7 +26,7 @@ const limitations=[
 
 function refit(input:LandmarkSensitivityInput,pairs:SensitivityPair[]){
  const source=pairs.map(p=>p.source),target=pairs.map(p=>p.target)
- const fitted=input.model==='spline'?fitNonlinearSpline(source,target,input.smoothing??.01):fitLandmarks(source,target,input.model)
+ const fitted=input.model==='spline'?fitNonlinearSpline(source,target,input.smoothing??.01):fitLandmarks(source,target,input.model,{reflection:input.reflection??'proper'})
  if(fitted.diagnostics.conditionNumber>1000||fitted.diagnostics.warnings.some(w=>/numerically unstable|poorly conditioned/i.test(w)))throw Error('Retained landmark geometry is numerically unstable')
  const mapping=createPointMapping(fitted.matrix,'spline' in fitted?fitted.spline:undefined)
  return {mapping,rms:fitted.rms}
@@ -36,9 +36,10 @@ function refit(input:LandmarkSensitivityInput,pairs:SensitivityPair[]){
 export async function landmarkLeaveOneOutSensitivity(input:LandmarkSensitivityInput,options:{
  shouldCancel?:()=>boolean;onProgress?:(completed:number,total:number)=>void;timeBudgetMs?:number;
 }={}):Promise<LandmarkSensitivityReport>{
+ if(input.reflection!==undefined&&!['proper','require'].includes(input.reflection))throw Error('Invalid sensitivity reflection branch')
  if(!Object.hasOwn(LANDMARK_SENSITIVITY_MIN_PAIRS,input.model))throw Error('Unsupported sensitivity model')
  const count=input.pairs.length,minimum=LANDMARK_SENSITIVITY_MIN_PAIRS[input.model]
- const report:LandmarkSensitivityReport={method:'leave-one-out-refit',status:'unavailable',model:input.model,pairCount:count,minimumPairs:minimum,probeCount:0,probeLocations:input.probePoints?'provided moving RAS points':'fitted moving landmarks',validOmissions:0,omissions:[],warnings:[...limitations]}
+ const report:LandmarkSensitivityReport={method:'leave-one-out-refit',reflection:input.reflection,status:'unavailable',model:input.model,pairCount:count,minimumPairs:minimum,probeCount:0,probeLocations:input.probePoints?'provided moving RAS points':'fitted moving landmarks',validOmissions:0,omissions:[],warnings:[...limitations]}
  if(count<minimum){report.reason=`At least ${minimum} complete enabled pairs are required for this ${input.model} sensitivity analysis.`;return report}
  if(count>LANDMARK_SENSITIVITY_MAX_PAIRS[input.model]){report.reason=`This on-demand ${input.model} analysis is limited to ${LANDMARK_SENSITIVITY_MAX_PAIRS[input.model]} pairs to bound refit work. The alignment is unchanged.`;return report}
  if(input.pairs.some(p=>!Number.isInteger(p.id)||!finitePoint(p.source)||!finitePoint(p.target))||new Set(input.pairs.map(p=>p.id)).size!==count){report.reason='Sensitivity needs distinct pair IDs and finite RAS-mm coordinates.';return report}

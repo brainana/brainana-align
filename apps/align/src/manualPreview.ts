@@ -23,8 +23,8 @@ export function manualPreviewDelta(before:FitState,after:FitState,target:Modalit
   if(!same(a,b))return null
  }
  const prior=(m:Modality):Manual12=>{if(before.manualAffine)return before.manualAffine.parameters[m];const p=zeroManual();if(registrationModalities(before.direction).moving===m)p.splice(0,6,...before.manual);return p}
- if(!same(prior(other),state.parameters[other])||before.manualAffine&&!same(before.manualAffine.centers,state.centers))return null
- return multiplyMat4(manualDelta(state.parameters[target],state.centers[target]),invertAffine(manualDelta(prior(target),state.centers[target])))
+ if((before.manualAffine?.reflections?.[other]??false)!==(state.reflections?.[other]??false)||!same(prior(other),state.parameters[other])||before.manualAffine&&!same(before.manualAffine.centers,state.centers))return null
+ return multiplyMat4(manualDelta(state.parameters[target],state.centers[target],state.reflections?.[target]),invertAffine(manualDelta(prior(target),state.centers[target],before.manualAffine?.reflections?.[target])))
 }
 export function transformedPreviewImage(image:NVImage,delta:Mat4):NVImage{
  const copy=sharedViewerImage(image);copy.setAffine(multiplyMat4(delta,image.hdr!.affine as Mat4));return copy

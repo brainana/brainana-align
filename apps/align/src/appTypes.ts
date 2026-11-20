@@ -24,6 +24,8 @@ export type FitState = {
   parameterCount?: number
   diagnostics?: TransformDiagnostics
   reflectionConfirmed?: boolean
+  landmarkAllowReflection?: boolean
+  landmarkReflection?: import('./landmarkFit').LandmarkReflectionSelection
   landmarkModel?: RegistrationModel
   landmarkMatrix: Mat4
   baseMatrix: Mat4

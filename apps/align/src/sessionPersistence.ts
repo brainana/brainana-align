@@ -12,7 +12,7 @@ import { diagnoseTransform, isLandmarkModel, LANDMARK_MODELS, validateAffine } f
 import { invertAffine } from './roiWarp'
 import type { RegistrationModel, FitState, Landmark, Loaded, Modality, OptimizationWindows } from './appTypes'
 
-export const SESSION_SCHEMA_VERSION = 14
+export const SESSION_SCHEMA_VERSION = 15
 
 export type ImageSignature = {
   acquisition?:AcquisitionMetadata
@@ -42,6 +42,7 @@ export type SessionPayload = {
   selectedId: number | null
   nextId: number
   direction: string
+  landmarkAllowReflection?: boolean
   landmarkModel?: RegistrationModel
   splineSmoothing?: number
   fit: FitState | null
@@ -107,6 +108,7 @@ export function createSessionPayload(options: {
   selectedId: number | null
   nextId: number
   direction: string
+  landmarkAllowReflection?: boolean
   landmarkModel?: RegistrationModel
   splineSmoothing?: number
   fit: FitState | null
@@ -131,6 +133,7 @@ export function createSessionPayload(options: {
     nextId: options.nextId,
     direction: options.direction,
     splineSmoothing:options.splineSmoothing,
+    landmarkAllowReflection:options.landmarkAllowReflection??false,
     landmarkModel: options.landmarkModel ?? (options.fit?.model==='jip'?'rigid':options.fit?.model) ?? 'rigid',
     fit: options.fit ? cloneFitState(options.fit,true) : null,
     optimizationWindows: structuredClone(options.optimizationWindows),
@@ -156,6 +159,7 @@ export function parseSessionPayload(value: unknown): SessionPayload {
   if (payload.nextId !== undefined && (!Number.isInteger(payload.nextId) || payload.nextId < 1)) throw new Error('Invalid next landmark identifier')
   if (payload.selectedId !== undefined && payload.selectedId !== null && !Number.isInteger(payload.selectedId)) throw new Error('Invalid selected landmark identifier')
   if (payload.landmarkModel !== undefined && !(isLandmarkModel(payload.landmarkModel)||payload.landmarkModel==='spline')) throw new Error('Unknown landmark model in session')
+  if(payload.landmarkAllowReflection!==undefined&&typeof payload.landmarkAllowReflection!=='boolean')throw Error('Invalid landmark reflection choice')
   if(payload.splineSmoothing!==undefined&&(!Number.isFinite(payload.splineSmoothing)||payload.splineSmoothing<0||payload.splineSmoothing>10))throw Error('Invalid spline smoothing')
   const fit = payload.fit ? normalizeFit(payload.fit, payload.landmarks) : null
   for (const signature of [payload.images?.mri, payload.images?.ct]) {
@@ -192,6 +196,7 @@ export function parseSessionPayload(value: unknown): SessionPayload {
     nextId: payload.nextId ?? 1,
     direction: payload.direction ?? fit?.direction ?? 'ct-mri',
     splineSmoothing:payload.splineSmoothing,
+    landmarkAllowReflection:payload.landmarkAllowReflection??false,
     landmarkModel: payload.landmarkModel ?? (fit?.model==='jip'?'rigid':fit?.model) ?? 'rigid',
     fit,
     processing,
@@ -247,13 +252,16 @@ function normalizeFit(input: FitState, landmarks: Landmark[]): FitState {
   if (!['affine','spline','jip'].includes(fit.model) && diagnostics.shear > 1e-4) throw new Error('Saved transform has shear inconsistent with its landmark model')
   if (fit.model === 'rigid' && diagnostics.scales.some(v => Math.abs(v - 1) > 1e-4)) throw new Error('Saved rigid transform contains scaling')
   if (fit.model === 'similarity' && Math.max(...diagnostics.scales) - Math.min(...diagnostics.scales) > 1e-4) throw new Error('Saved similarity transform has nonuniform scaling')
-  if (!['affine','spline','jip'].includes(fit.model) && diagnostics.reflection) throw new Error('A proper landmark model cannot contain a reflection')
+  // A discrete, explicitly reviewed reflection is valid for 6/7/9 models;
+  // the unit/uniform/independent scale and no-shear checks above still apply.
   if(['spline','jip'].includes(fit.model??'')&&diagnostics.reflection)throw Error('Nonlinear session cannot mirror anatomy')
   const oldWarnings = fit.diagnostics?.warnings?.filter(w => typeof w === 'string') ?? []
   fit.diagnostics = { ...diagnostics, warnings: [...new Set([...oldWarnings, ...diagnostics.warnings])] }
   fit.landmarkSnapshot = fit.landmarkSnapshot ?? structuredClone(landmarks)
   validateLandmarks(fit.landmarkSnapshot)
   if(fit.nonlinear&&fit.nonlinear.kernel!=='jip-dense-pull'){const s=fit.nonlinear,pairs=fit.landmarkSnapshot.filter(l=>l.enabled&&l.mri&&l.ct);if(pairs.length!==s.controls.length)throw Error('Spline controls do not match saved landmark snapshot');const map=createPointMapping(fit.matrix,s);let sum=0;for(let i=0;i<pairs.length;i++){const source=fit.direction==='ct-mri'?pairs[i].ct!:pairs[i].mri!,target=fit.direction==='ct-mri'?pairs[i].mri!:pairs[i].ct!,q=createPointMapping(s.baseAffine).forward(source);if(q.some((v,a)=>Math.abs((v-s.center[a])/s.scale-s.controls[i][a])>1e-6))throw Error('Spline control geometry does not match its saved physical landmarks');const mapped=map.forward(source),residual=Math.hypot(...mapped.map((v,a)=>v-target[a]));sum+=residual*residual}fit.rms=Math.sqrt(sum/pairs.length)}
+  if(fit.landmarkAllowReflection!==undefined&&(typeof fit.landmarkAllowReflection!=='boolean'||fit.landmarkAllowReflection===false&&diagnoseTransform(fit.landmarkMatrix).reflection))throw Error('Saved landmark reflection policy does not match the fitted landmark transform')
+  if(fit.landmarkReflection){const r=fit.landmarkReflection;if(!['allow','require'].includes(r.mode)||r.axis!=='moving-RAS-X'||typeof r.applied!=='boolean'||typeof r.ambiguous!=='boolean'||!Number.isFinite(r.planeMm)||![r.properRmsMm,r.reflectedRmsMm].every(v=>Number.isFinite(v)&&v>=0)||r.applied!==diagnoseTransform(fit.landmarkMatrix).reflection)throw Error('Invalid landmark reflection provenance')}
   fit.landmarksChanged = Boolean(fit.landmarksChanged)
   fit.reflectionConfirmed = Boolean(fit.reflectionConfirmed && diagnostics.reflection)
   if (fit.proposal) {

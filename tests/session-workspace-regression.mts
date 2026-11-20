@@ -62,5 +62,5 @@ const signature=imageSignature(loaded.ct)!;assert.deepEqual(signature.sourceLoca
 const resaved=createSessionPayload({appVersion:'test',loaded,landmarks:[],selectedId:null,nextId:1,direction:'ct-mri',fit,optimizationWindows:{mri:{},ct:{}}});assert.equal(parseSessionPayload(JSON.parse(JSON.stringify(resaved))).images.ct!.sourceLocations![0],'/mounted/renamed/ct.nii.gz')
 for(const bad of [['bad\0path'],['a','b'],[{}]]){const tampered=JSON.parse(JSON.stringify(resaved));tampered.images.ct.sourceLocations=bad;assert.throws(()=>parseSessionPayload(tampered),/locations/)}
 assert.equal(JSON.stringify(resaved.images).includes('sessionToken'),false);delete window.brainanaSessionFiles
-const legacy=JSON.parse(JSON.stringify(session));legacy.schemaVersion=13;delete legacy.images.mri.sourceLocations;delete legacy.images.ct.sourceLocations;assert.equal(parseSessionPayload(legacy).schemaVersion,14)
+const legacy=JSON.parse(JSON.stringify(session));legacy.schemaVersion=13;delete legacy.images.mri.sourceLocations;delete legacy.images.ct.sourceLocations;assert.equal(parseSessionPayload(legacy).schemaVersion,15)
 dom.window.close();console.log('Session workspace: empty startup, wrong-file retry, exact saved grids/frame, full processing replay, original immutability, reuse, failure/cancel/retry, legacy schemas and safe path-only metadata passed.')

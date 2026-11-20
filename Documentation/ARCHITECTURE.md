@@ -1,3 +1,11 @@
+# 0.18.4 · discrete handedness alongside constrained transforms
+
+The proper quaternion/positive-scale fitting routines remain unchanged. An optional second branch mirrors moving physical RAS X about its landmark centroid, fits the same proper model to all reflected source pairs, and composes the mirror back onto the result. For rigid this spans both components of the orthogonal group with six continuous pose parameters. Similarity uses one positive uniform scale; anisotropic uses positive independent source-axis scales and no shear. Proper ties and rank-deficient/ill-conditioned 3D geometry do not infer a reflection. A fixed mirrored branch is used only when refitting an already chosen mirrored landmark model for sensitivity.
+
+This uses the orthogonal Procrustes distinction between rotation and reflection; see the primary [SciPy orthogonal_procrustes documentation](https://docs.scipy.org/doc/scipy/reference/generated/scipy.linalg.orthogonal_procrustes.html) and its cited Schonemann1966 paper. SciPy is not added as a runtime dependency.
+
+Manual state version2 adds explicit MRI/CT reflection flags to the existing positive-scale twelve-control algebra. The same pre/post composition, cached display delta, general affine inverse, source-grid preservation and original-source export apply. Reflection changes require explicit review before publication; nonlinear map safety restrictions remain in place. Schema15 and metadata retain branch/flag provenance without representing a mirrored rigid transform as a twelve-parameter affine.
+
 # 0.18.3 · native filename-and-folder saves
 
 The renderer groups a volume and its JSON metadata using the existing export-artifact boundary. The core-client naming helper maps the selected name onto related outputs; no scientific arrays or image geometry are changed. The core-desktop save handler accepts same-origin Blob URLs and filename suggestions from the trusted main frame, obtains path authorization from one native Save dialog, preflights companion overwrites, and writes sequentially using Chromium download streams. The renderer awaits the terminal result, revokes Blob URLs and stops on cancellation/failure. No image ArrayBuffer crosses IPC. Native paths are never supplied by renderer code. Workstation exports use the existing authenticated save API through a combined folder/filename form.

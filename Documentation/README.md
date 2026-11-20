@@ -1,3 +1,11 @@
+# Brainana Align 0.18.4
+
+**Landmark alignment:** choose any landmark transform model and enable **Allow left–right reflection** when appropriate. The app compares ordinary and mirrored fits using that same model; it does not add scale or shear to a rigid fit. The default is unchanged. Four or more spatially distributed pairs are needed to distinguish handedness from a rigid rotation; planar/tied cases retain the non-reflected fit and show a warning. The checkbox also controls affine fitting. A reflected affine optimum is rejected while it is off; when on, confirmation is still required.
+
+**Manual adjustment:** select **Adjust MRI** or **Adjust CT**, then **Flip … left–right**. Confirm the change; click the same control again to undo it. The flip is separate from scale and from export direction, and original image values remain unchanged. It works with linear alignments. Pending proposals must first be accepted or rejected. Nonlinear maps cannot be flipped here; their disable reason explains that a linear alignment is required.
+
+The status/fit diagnostics identify mirrored results. Application, restore and export retain explicit reflection confirmation. Sessions save the selected fitting option and manual flags; exported images and transform metadata record reflection. These are true anatomical reflections, distinct from switching the displayed fixed/moving image.
+
 # Brainana Align 0.18.3
 
 See the [project overview](../README.md), [software credits and scientific references](../docs/software-credits.md),
@@ -263,7 +271,7 @@ Every enabled complete pair contributes to the fit. Minimum counts alone do not 
 
 For the nine-parameter model, `A = R diag(sx, sy, sz)`: scales act along the **moving image's physical RAS X/Y/Z axes before rotation**, not along voxel indices. Reversing a general anisotropic matrix can mix those axes; its exact inverse is exported, but fitting the reverse direction with the same constrained model is a different optimization. Use affine when you need unrestricted geometry in either direction.
 
-A negative determinant means mirrored anatomy. Affine reflection requires explicit confirmation before application, session restoration, and each registration/image export. Check left–right labels and coordinate conventions. A warning may identify a much better mirrored affine candidate without applying it.
+A negative determinant means mirrored anatomy. Any reflected fit requires explicit confirmation before application, session restoration, and each registration/image export. Check left–right labels and coordinate conventions. A warning may identify a much better mirrored affine candidate without applying it.
 
 Scale diagnostics are lengths of the transformed physical unit axes. Shear magnitude is the maximum absolute cosine between the transformed axes: zero means orthogonal. These diagnostics do not replace visual anatomical review. Scale outside 0.25–4, shear above 0.15, determinant magnitude below 1e-6, and poor geometry/conditioning generate warnings.
 

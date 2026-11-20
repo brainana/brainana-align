@@ -1,3 +1,7 @@
+# 0.18.4 · LR reflection checks
+
+Run npm run test:lr-reflection, test:production-ui, test:manual-affine, test:manual-preview, test:sessions and verify:session-desktop in addition to the full CI and release package gates. Native Electron verification requires desktop services. Use schema15 for new output; retain older schema fixtures to test migration. The new features require no new registration runtime, external library or GPU SDK.
+
 # 0.18.3 · filename/folder save qualification
 
 In addition to the full release gates, run npm run test:save-dialog, npm run test:export-dialog, npm run test:guide-modals and npm run verify:session-desktop. The last command requires native Electron/desktop access and exercises the actual preload, combined native Save invocation, Chromium disk writes, named sessions and exact aligned voxel values. Returned picker choices are scripted. An unavailable desktop is an explicit limitation, never a pass. The release verifier compares the added core-client and core-desktop modules against the signed package.

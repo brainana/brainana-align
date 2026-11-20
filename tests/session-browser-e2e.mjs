@@ -23,7 +23,7 @@ try{
  await page.setInputFiles('#session-locate-input',ct);await page.waitForFunction(()=>document.querySelector('#status').textContent.includes('Full session restored.'))
  assert.equal(await page.locator('#welcome-screen').isVisible(),false)
  await page.evaluate(()=>{window.__saved=[];window.brainanaAlignSaveBlob=async(blob,filename)=>window.__saved.push({filename,bytes:Array.from(new Uint8Array(await blob.arrayBuffer()))});document.querySelector('#save-session').click()})
- await page.waitForFunction(()=>window.__saved.length===1);const saved=JSON.parse(Buffer.from((await page.evaluate(()=>window.__saved[0])).bytes).toString());assert.deepEqual(saved.fit.matrix,matrix);assert.equal(saved.landmarks.length,5);assert.deepEqual(saved.images.mri.workingDims,[9,10,11]);assert.equal(saved.schemaVersion,14)
+ await page.waitForFunction(()=>window.__saved.length===1);const saved=JSON.parse(Buffer.from((await page.evaluate(()=>window.__saved[0])).bytes).toString());assert.deepEqual(saved.fit.matrix,matrix);assert.equal(saved.landmarks.length,5);assert.deepEqual(saved.images.mri.workingDims,[9,10,11]);assert.equal(saved.schemaVersion,15)
  await page.evaluate(()=>{window.__saved=[];document.querySelector('#save-aligned').click()});await page.waitForFunction(()=>window.__saved.some(s=>s.filename.endsWith('.nii.gz')))
  const output=await page.evaluate(()=>window.__saved.find(s=>s.filename.endsWith('.nii.gz'))),bytes=gunzipSync(Uint8Array.from(output.bytes)),header=nifti.readHeader(bytes.buffer);assert.deepEqual(header.dims.slice(1,4),dims);assert.deepEqual(header.affine,mriAffine);assert.deepEqual(new Float32Array(nifti.readImage(header,bytes.buffer)),values)
  // Cancelling a later import retains the current complete alignment and files.

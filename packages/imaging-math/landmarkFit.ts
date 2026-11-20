@@ -1,7 +1,14 @@
-import { applyMat4, fitRigid, type Mat4, type Vec3 } from './rigid'
+import { applyMat4, fitRigid, multiplyMat4, type Mat4, type Vec3 } from './rigid'
 import { determinant3, invertAffine } from './roiWarp'
 
 export type LandmarkModel = 'rigid' | 'similarity' | 'anisotropic' | 'affine'
+export type LandmarkReflectionSelection = {mode:'allow'|'require';axis:'moving-RAS-X';planeMm:number;applied:boolean;ambiguous:boolean;properRmsMm:number;reflectedRmsMm:number}
+export type LandmarkFitOptions = {reflection?:'proper'|'allow'|'require'}
+/** An explicit physical left/right mirror; independent of voxel ordering. */
+export function leftRightReflection(center:Vec3):Mat4 {
+  if (!Array.isArray(center)||center.length!==3||!center.every(Number.isFinite)) throw Error('Reflection center must be finite RAS millimeters')
+  return [[-1,0,0,2*center[0]],[0,1,0,0],[0,0,1,0],[0,0,0,1]]
+}
 export const LANDMARK_MODELS = {
   rigid: { label: 'Rigid, 6 parameters', parameters: 6 },
   similarity: { label: 'Similarity, 7 parameters', parameters: 7 },
@@ -86,7 +93,7 @@ export function diagnoseTransform(matrix: Mat4): TransformDiagnostics {
   if (reflection) warnings.push('REFLECTION: this transform mirrors anatomy. Verify left–right conventions before accepting or exporting.')
   return { determinant, scales, shear, reflection, conditionNumber, warnings }
 }
-export function fitLandmarks(source: Vec3[], target: Vec3[], model: LandmarkModel = 'rigid') {
+function fitLandmarkModel(source: Vec3[], target: Vec3[], model: LandmarkModel = 'rigid') {
   if (!isLandmarkModel(model)) throw new Error('Unknown landmark transform model')
   if (source.length !== target.length || source.length < (model === 'affine' || model === 'anisotropic' ? 4 : 3)) throw new Error(`${LANDMARK_MODELS[model].label} requires at least ${model === 'affine' || model === 'anisotropic' ? 4 : 3} complete landmark pairs`)
   if (![...source, ...target].every(p => p.length === 3 && p.every(Number.isFinite))) throw new Error('Landmark coordinates must be finite physical millimeters')
@@ -152,4 +159,31 @@ export function fitLandmarks(source: Vec3[], target: Vec3[], model: LandmarkMode
     } catch { /* Planar landmarks cannot identify an affine candidate. */ }
   }
   return { model, parameterCount: LANDMARK_MODELS[model].parameters, matrix, inverse: invertAffine(matrix), residuals, rms, diagnostics }
+}
+
+/** Compare both connected components of the constrained model. Reflection is
+ * discrete: R*F, s*R*F or R*diag(s)*F, never an unconstrained affine substitute.
+ * The unchanged proper fitter remains the default and owns all-pair fitting. */
+export function fitLandmarks(source:Vec3[],target:Vec3[],model:LandmarkModel='rigid',options:LandmarkFitOptions={}) {
+  const mode=options.reflection??'proper'
+  if(!['proper','allow','require'].includes(mode))throw Error('Unknown landmark reflection option')
+  const proper=fitLandmarkModel(source,target,model)
+  if(model==='affine'||mode==='proper'){
+    if(model==='affine'&&options.reflection==='proper'&&proper.diagnostics.reflection)throw Error('The best-fitting affine transform mirrors anatomy, but Allow left–right reflection is off. No transform was applied. Check the landmark pairs or explicitly allow reflection.')
+    if(mode==='require'&&!proper.diagnostics.reflection)throw Error('The unconstrained affine fit does not require reflection')
+    return {...proper,reflectionSelection:undefined as LandmarkReflectionSelection|undefined}
+  }
+  const cs=center(source),mirror=leftRightReflection(cs),reflected=fitLandmarkModel(source.map(p=>applyMat4(mirror,p)),target,model)
+  let ambiguous=false
+  // Three points, and any planar set, cannot determine handedness. Nearly
+  // planar sets must not turn rounding/noise into an automatic anatomy flip.
+  try {for(const points of [source,target]){const c=center(points),x=points.map(p=>subtract(p,c));if(leastSquares(x,x.map(p=>p[0])).condition>1000)ambiguous=true}}catch{ambiguous=true}
+  const tolerance=1e-8*Math.max(1,...source.map(p=>Math.hypot(...subtract(p,cs))))
+  const applied=mode==='require'||(!ambiguous&&reflected.rms+tolerance<proper.rms)
+  const matrix=applied?multiplyMat4(reflected.matrix,mirror):proper.matrix,diagnostics=diagnoseTransform(matrix),chosen=applied?reflected:proper
+  diagnostics.warnings=[...new Set([...chosen.diagnostics.warnings.filter(w=>!/^REFLECTION:|A mirrored affine candidate/.test(w)),...diagnostics.warnings])]
+  if(ambiguous)diagnostics.warnings.push(mode==='require'?'Reflection handedness is fixed by the requested branch; these planar or nearly planar landmarks cannot establish it independently.':'These landmarks are planar or nearly planar and cannot reliably distinguish reflection. The non-reflected fit was retained; add a fourth pair away from the plane.')
+  const residuals=source.map((p,i)=>Math.hypot(...subtract(applyMat4(matrix,p),target[i]))),rms=Math.sqrt(residuals.reduce((s,v)=>s+v*v,0)/source.length)
+  const reflectionSelection:LandmarkReflectionSelection={mode,axis:'moving-RAS-X',planeMm:cs[0],applied,ambiguous,properRmsMm:proper.rms,reflectedRmsMm:reflected.rms}
+  return {model,parameterCount:chosen.parameterCount,matrix,inverse:invertAffine(matrix),residuals,rms,diagnostics,reflectionSelection}
 }

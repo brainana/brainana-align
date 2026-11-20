@@ -62,6 +62,7 @@ ${welcomeMarkup()}
       <summary><span>Landmark alignment</span></summary>
       <div class="panel-body">
         <label>Landmark transform<select id="landmark-transform">${Object.entries(LANDMARK_MODELS).map(([value, info]) => `<option value="${value}">${info.label}</option>`).join('')}</select></label>
+        <label id="landmark-reflection-choice" class="check"><input id="landmark-allow-reflection" type="checkbox"> Allow left–right reflection</label><p id="landmark-reflection-hint" class="hint"></p>
 
         <button id="fit-side" class="primary">Run landmark alignment</button>
         <button id="restore-alignment-landmarks" disabled>Restore alignment landmarks</button>
@@ -92,6 +93,7 @@ ${welcomeMarkup()}
       <div class="panel-body">
         <div id="manual-start-section"><button id="manual-start-geometry">Begin manual alignment</button><p class="hint">Create a starting overlay so you can move, rotate, scale, or shear MRI or CT manually. The images may initially overlap poorly.</p></div>
         <div class="manual-targets" role="group" aria-label="Image to adjust"><button data-manual-target="mri" aria-pressed="false">Adjust MRI</button><button data-manual-target="ct" aria-pressed="true">Adjust CT</button></div>
+        <button id="manual-flip-lr" aria-pressed="false" aria-describedby="manual-flip-status" disabled>Flip CT left–right</button><p id="manual-flip-status" class="hint" role="status"></p>
         <label class="check"><input type="checkbox" id="manual-source-preview">Preview adjustment in selected source row</label><p class="hint">The preview row uses the other image’s grid and is labelled as transformed. Original voxels stay unchanged. Native views return when editing landmarks, processing images or defining regions.</p><p id="manual-status" class="hint" role="status"></p><div id="manual-proposal-actions" class="hidden"><p class="hint">Resolve the preview here to unlock manual controls. Accept keeps it; Reject restores the previous alignment, or clears the preview if there was none.</p><button id="manual-accept-proposal">Accept preview and enable manual adjustment</button><button id="manual-reject-proposal">Reject preview and enable manual adjustment</button></div>
         <div class="step-grid"><label>Translation step<select id="translation-step"><option value="0.1">0.1 mm</option><option value="0.5" selected>0.5 mm</option><option value="1">1 mm</option><option value="2">2 mm</option><option value="5">5 mm</option></select></label><label>Rotation step<select id="rotation-step"><option value="0.1">0.1°</option><option value="0.25">0.25°</option><option value="0.5" selected>0.5°</option><option value="1">1°</option><option value="2">2°</option></select></label><label>Scale step<select id="scale-step"><option value="0.1">0.1%</option><option value="0.5">0.5%</option><option value="1" selected>1%</option><option value="5">5%</option></select></label><label>Shear step<select id="shear-step"><option value="0.001">0.001</option><option value="0.01" selected>0.01</option><option value="0.05">0.05</option></select></label></div>
         <div id="nudge-controls" class="nudge-controls">

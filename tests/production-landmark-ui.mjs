@@ -176,8 +176,8 @@ async function loadLandmarks(linear) {
   const payload={application:'Brainana Align',schemaVersion:1,images:{mri:null,ct:null},landmarks,direction:'ct-mri',fit:null,optimizationWindows:{mri:{},ct:{}}}
   const input=w.document.querySelector('#load-session')
   Object.defineProperty(input,'files',{configurable:true,value:[{text:async()=>JSON.stringify(payload)}]})
-  input.dispatchEvent(new w.Event('change'))
-  await new Promise(r=>setTimeout(r,20))
+  w.document.querySelector('#status').textContent='';input.dispatchEvent(new w.Event('change'))
+  await new Promise(r=>setTimeout(r,20));assert(w.document.querySelector('#status').textContent.includes('Landmarks restored'),'The synthetic landmark import must actually finish before fitting')
 }
 const models={rigid:[[0,-1,0],[1,0,0],[0,0,1]],similarity:[[0,-1.7,0],[1.7,0,0],[0,0,1.7]],anisotropic:[[0,-1.8,0],[0.7,0,0],[0,0,2.3]],affine:[[0.8,0.2,-0.3],[0,1.7,0.4],[0,0,2.1]]}
 const saved=[]
@@ -195,7 +195,19 @@ for(const [model,linear] of Object.entries(models)) {
   assert.equal(JSON.parse(saved.at(-3).text).transform_model,model)
   assert.ok(saved.at(-2).filename.endsWith(`_${model}.txt`))
 }
-await loadLandmarks([[-1,0,0],[0,1,0],[0,0,1]]);select.value='affine'
+// Reflected fits retain the selected constrained model and explicit consent.
+for(const [model,linear] of Object.entries({rigid:[[-1,0,0],[0,1,0],[0,0,1]],similarity:[[-1.4,0,0],[0,1.4,0],[0,0,1.4]],anisotropic:[[-.8,0,0],[0,1.2,0],[0,0,1.3]]})){
+ await loadLandmarks(linear);select.value=model;select.dispatchEvent(new w.Event('change'))
+ const choice=w.document.querySelector('#landmark-allow-reflection');assert.equal(choice.checked,false);choice.checked=true
+ allowReflection=false;w.document.querySelector('#fit-side').click();await settledFit();assert.equal(w.document.querySelector('#save-transform').disabled,true)
+ allowReflection=true;w.document.querySelector('#fit-side').click();await settledFit();assert(w.document.querySelector('#fit-summary').textContent.includes('Reflection: YES'));assert(w.document.querySelector('#fit-summary').textContent.includes('RMS error: 0.000 mm'))
+ w.document.querySelector('#save-transform').click();await new Promise(r=>setTimeout(r,10));const reflected=JSON.parse(saved.at(-3).text);assert.equal(reflected.transform_model,model);assert.equal(reflected.parameter_count,{rigid:6,similarity:7,anisotropic:9}[model]);assert(reflected.landmark_reflection_allowed);assert(reflected.landmark_reflection_selection.applied);assert(reflected.reflection_confirmed)
+}
+allowReflection=false
+await loadLandmarks([[-1,0,0],[0,1,0],[0,0,1]]);select.value='affine';select.dispatchEvent(new w.Event('change'))
+assert.equal(w.document.querySelector('#landmark-allow-reflection').disabled,false)
+w.document.querySelector('#fit-side').click();await settledFit();assert(w.document.querySelector('#status').textContent.includes('reflection is off'));assert.equal(w.document.querySelector('#save-transform').disabled,true)
+w.document.querySelector('#landmark-allow-reflection').checked=true
 w.document.querySelector('#fit-side').click();await settledFit()
 assert.equal(w.document.querySelector('#save-transform').disabled,true,'reflection declined must not apply')
 assert.ok(dialogs.some(m=>m.includes('MIRRORS ANATOMY')))
@@ -208,9 +220,11 @@ allowReflection=false
 const count=saved.length;w.document.querySelector('#save-transform').click();await new Promise(r=>setTimeout(r,10));assert.equal(saved.length,count)
 const beforeReset=w.document.querySelector('#fit-summary').innerHTML;let resetConfirms=0;w.confirm=message=>{assert(message.includes('Reset workspace and start over?'));resetConfirms++;return false}
 assert.equal(w.document.querySelector('#guided-reset-workspace'),null,'Guide has no reset shortcut');w.document.querySelector('#reset-workspace').click();await new Promise(r=>setTimeout(r,10));assert.equal(resetConfirms,1,'Only the main toolbar offers Reset workspace');assert.equal(w.document.querySelector('#fit-summary').innerHTML,beforeReset);assert.equal(w.document.querySelector('main').inert,false)
+// Restore the ordinary confirmation adapter after the reset-only assertion.
+w.confirm=message=>{dialogs.push(message);return !message.includes('MIRRORS ANATOMY')||allowReflection}
 // Verify feedback through the actual bundled click handler, not a substituted UI controller.
 await loadLandmarks(models.rigid);select.value='rigid';w.document.querySelector('#fit-side').click();await settledFit()
-w.document.querySelector('#export-open').click();assert.equal(w.document.querySelector('#export-modal').classList.contains('hidden'),false)
+await new Promise(resolve=>w.requestAnimationFrame(resolve));assert.equal(w.document.querySelector('#export-open').disabled,false,'A fitted landmark transform can be exported without loaded image voxels');w.document.querySelector('#export-open').click();assert.equal(w.document.querySelector('#export-modal').classList.contains('hidden'),false)
 assert.equal(w.document.querySelector('#save-aligned').disabled,true,'Aligned image needs loaded volumes')
 w.brainanaAlignSaveBlob=async()=>{throw new w.Error('Destination write failed')}
 w.document.querySelector('#save-transform').click();await new Promise(r=>setTimeout(r,20))

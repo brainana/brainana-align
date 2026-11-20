@@ -1,3 +1,4 @@
+import {installLandmarkReflectionControls} from './landmarkReflectionUI'
 import {installAcquisitionUI} from './acquisitionUI'
 import {installSliceCrosshairs} from './sliceCrosshairs'
 import {installItkRegistration} from './itkRegistrationUI'
@@ -76,6 +77,7 @@ const planeTypes: Record<Plane, SLICE_TYPE> = {
 
 const app = document.querySelector<HTMLDivElement>('#app')!
 app.innerHTML = alignmentLayout(APP_VERSION)
+const landmarkReflection=installLandmarkReflectionControls()
 installWorkflowFocus()
 const operations=createOperationState(),reviewScheduler=createOverlayScheduler(operations)
 const activity=createAlignmentActivity(operations,()=>reviewScheduler.invalidate())
@@ -381,7 +383,7 @@ function renderAllNow() {
   thresholdMasks?.refresh()
   generatedExports?.refresh()
   document.querySelector<HTMLButtonElement>('#save-session')!.disabled=!loaded.mri&&!loaded.ct&&!landmarks.length
-  document.querySelector<HTMLButtonElement>('#export-open')!.disabled=!loaded.mri&&!loaded.ct
+  document.querySelector<HTMLButtonElement>('#export-open')!.disabled=!loaded.mri&&!loaded.ct&&!fitResult
   renderMarkers('mri')
   renderMarkers('ct')
   renderReviewMarkers()
@@ -524,12 +526,12 @@ async function runFit() {
   if(!await activity.begin('Fitting landmark transformation…'))return
   const fitActivityId=activity.id
   try {
-    const result = fitLandmarks(source,target,model)
+    const result = fitLandmarks(source,target,model,{reflection:landmarkReflection.enabled?'allow':'proper'})
     const candidate = { matrix: result.matrix } as FitState
     if (!confirmReflectedTransform(candidate, 'apply')) return
     complete.forEach((l,i)=>l.residual=result.residuals[i])
     manualReviewTarget=null;manualUI?.stopPreview();clearSourcePreview()
-    fitResult={direction,model,landmarkModel:model,parameterCount:result.parameterCount,diagnostics:result.diagnostics,reflectionConfirmed:candidate.reflectionConfirmed ?? false,landmarkMatrix:result.matrix,baseMatrix:result.matrix,matrix:result.matrix,inverse:result.inverse,rms:result.rms,manual:[0,0,0,0,0,0],proposal:null,landmarkSnapshot:structuredClone(landmarks),landmarksChanged:false,fittedAt:new Date().toISOString()}
+    fitResult={direction,model,landmarkModel:model,landmarkAllowReflection:landmarkReflection.enabled,landmarkReflection:result.reflectionSelection,parameterCount:result.parameterCount,diagnostics:result.diagnostics,reflectionConfirmed:candidate.reflectionConfirmed ?? false,landmarkMatrix:result.matrix,baseMatrix:result.matrix,matrix:result.matrix,inverse:result.inverse,rms:result.rms,manual:[0,0,0,0,0,0],proposal:null,landmarkSnapshot:structuredClone(landmarks),landmarksChanged:false,fittedAt:new Date().toISOString()}
     fitted=fitResult
     fitSummary.innerHTML=fitSummaryHtml(fitResult)
     saveAligned.disabled=false;saveTransform.disabled=false;resetManual.disabled=false;resetLandmark.disabled=false;refineButton.disabled=false;restoreAlignmentLandmarks.disabled=false;document.querySelector<HTMLButtonElement>('#export-open')!.disabled=false
@@ -692,6 +694,7 @@ function currentSession() {
     nextId,
     direction: directionSelect.value,
     splineSmoothing:sessionSplineSmoothing(),
+    landmarkAllowReflection:landmarkReflection.enabled,
     landmarkModel: document.querySelector<HTMLSelectElement>('#landmark-transform')!.value as RegistrationModel,
     fit: fitResult,
     optimizationWindows,
@@ -711,8 +714,10 @@ function applySessionMetadata(payload:SessionPayload,restoreFit:boolean){
   landmarks=structuredClone(payload.landmarks);selectedId=payload.selectedId
   nextId=Math.max(payload.nextId,...landmarks.map(landmark=>landmark.id+1),1)
   directionSelect.value=payload.direction
+  landmarkReflection.restore(payload.landmarkAllowReflection??false)
   const model=payload.landmarkModel??payload.fit?.model??'rigid'
   document.querySelector<HTMLSelectElement>('#landmark-transform')!.value=['spline','jip'].includes(model)?'rigid':model
+  landmarkReflection.refresh()
   document.querySelector<HTMLInputElement>('#spline-smoothing')!.value=String(payload.splineSmoothing??(payload.fit?.nonlinear?.kernel==='3d-polyharmonic-r'?payload.fit.nonlinear.smoothing:undefined)??.01)
   optimizationWindows=sanitizeOptimizationWindows(structuredClone(payload.optimizationWindows))
   fitResult=restoreFit&&payload.fit?cloneFitState(payload.fit):null
@@ -746,7 +751,7 @@ async function openSessionFile(file:File){
   if(payload.fit&&!confirmReflectedTransform(payload.fit,'restore and apply'))return false
   const abort=new AbortController(),cancel=document.querySelector<HTMLButtonElement>('#alignment-cancel')!,welcome=document.querySelector<HTMLElement>('#welcome-screen')!
   const stop=()=>abort.abort();let ownActivity:number|null=null,publishing=false,outcome:'completed'|'cancelled'|'failed'='completed'
-  const old={pairing:getRegistrationPairing(),loaded:{...loaded},fit:fitResult,landmarks:structuredClone(landmarks),selectedId,nextId,history:[...history],windows:structuredClone(optimizationWindows),mm:structuredClone(currentMm),direction:directionSelect.value,model:document.querySelector<HTMLSelectElement>('#landmark-transform')!.value,smoothing:document.querySelector<HTMLInputElement>('#spline-smoothing')!.value,review:reviewImages,manualTarget:manualReviewTarget,manualPreview:manualPreviewBase,reviewLabel:document.querySelector('#review-label')!.textContent,summary:refineSummary.textContent,preview:document.querySelector<HTMLInputElement>('#manual-source-preview')!.checked,scenes:[...Object.values(views.mri),...Object.values(views.ct),...Object.values(reviewViews)].map(v=>Object.fromEntries(Object.entries(v.nv.scene).filter(([,value])=>typeof value!=='function').map(([key,value])=>[key,structuredClone(value)])))}
+  const old={pairing:getRegistrationPairing(),loaded:{...loaded},fit:fitResult,landmarks:structuredClone(landmarks),selectedId,nextId,history:[...history],windows:structuredClone(optimizationWindows),mm:structuredClone(currentMm),direction:directionSelect.value,allowReflection:landmarkReflection.enabled,model:document.querySelector<HTMLSelectElement>('#landmark-transform')!.value,smoothing:document.querySelector<HTMLInputElement>('#spline-smoothing')!.value,review:reviewImages,manualTarget:manualReviewTarget,manualPreview:manualPreviewBase,reviewLabel:document.querySelector('#review-label')!.textContent,summary:refineSummary.textContent,preview:document.querySelector<HTMLInputElement>('#manual-source-preview')!.checked,scenes:[...Object.values(views.mri),...Object.values(views.ct),...Object.values(reviewViews)].map(v=>Object.fromEntries(Object.entries(v.nv.scene).filter(([,value])=>typeof value!=='function').map(([key,value])=>[key,structuredClone(value)])))}
   try{
     if(!await activity.begin('Opening saved session and locating original images…','preparation'))return false
     ownActivity=activity.id;welcome.inert=true;cancel.classList.remove('hidden');cancel.textContent='Cancel opening session';cancel.addEventListener('click',stop)
@@ -771,7 +776,7 @@ async function openSessionFile(file:File){
     outcome=abort.signal.aborted||(error as Error)?.name==='AbortError'?'cancelled':'failed'
     if(publishing){
       setRegistrationPairing(old.pairing);loaded.mri=old.loaded.mri;loaded.ct=old.loaded.ct;fitResult=old.fit;landmarks=old.landmarks;selectedId=old.selectedId;nextId=old.nextId;history=old.history;optimizationWindows=old.windows;currentMm.mri=old.mm.mri;currentMm.ct=old.mm.ct;manualReviewTarget=old.manualTarget
-      directionSelect.value=old.direction;document.querySelector<HTMLSelectElement>('#landmark-transform')!.value=old.model;document.querySelector<HTMLInputElement>('#spline-smoothing')!.value=old.smoothing
+      directionSelect.value=old.direction;document.querySelector<HTMLSelectElement>('#landmark-transform')!.value=old.model;landmarkReflection.restore(old.allowReflection);document.querySelector<HTMLInputElement>('#spline-smoothing')!.value=old.smoothing
       for(const m of ['mri','ct'] as Modality[]){for(const view of Object.values(views[m])){while(view.nv.volumes.length)view.nv.removeVolumeByIndex(0);if(loaded[m])view.nv.addVolume(sharedViewerImage(loaded[m]!.nvImage))}document.querySelector(`#${m}-name`)!.textContent=loaded[m]?.name??`Select ${imageLabel(m)}`;setImagePlaceholder(m,loaded[m]?'hidden':'empty');if(old.mm[m])gotoMm(m,old.mm[m]!)}
       if(old.fit){fitSummary.innerHTML=fitSummaryHtml(old.fit);for(const button of [saveAligned,saveTransform,resetManual,resetLandmark,refineButton,restoreAlignmentLandmarks])button.disabled=false;updateNudgeOutputs()}else clearFit()
       if(old.review)publishReview(loaded[old.review.fixedModality]!,old.review.movingModality,old.review.fixedModality,old.review.fit,old.review.moving)
@@ -935,7 +940,7 @@ function applySettings(p:Preferences){
   if(!appliedPreferences||p.interaction.linked!==appliedPreferences.interaction.linked)linkAfter.checked=p.interaction.linked
   appliedPreferences=structuredClone(p);renderMarkers('mri');renderMarkers('ct');renderReviewMarkers()
 }
-function applyRegistrationDefaults(){const p=getPreferences().registration;document.querySelector<HTMLSelectElement>('#landmark-transform')!.value=p.model;document.querySelector<HTMLSelectElement>('#auto-linear-model')!.value=p.model;document.querySelector('#auto-linear-model')!.dispatchEvent(new Event('change'));refineBounds.value=p.preset;refineTranslationLimit.value=String(p.translationLimit);refineRotationLimit.value=String(p.rotationLimit);refineTranslationStartStep.value=String(p.translationStep);refineRotationStartStep.value=String(p.rotationStep);updateSplineControls();renderAll()}
+function applyRegistrationDefaults(){const p=getPreferences().registration;document.querySelector<HTMLSelectElement>('#landmark-transform')!.value=p.model;document.querySelector<HTMLSelectElement>('#auto-linear-model')!.value=p.model;document.querySelector('#auto-linear-model')!.dispatchEvent(new Event('change'));refineBounds.value=p.preset;refineTranslationLimit.value=String(p.translationLimit);refineRotationLimit.value=String(p.rotationLimit);refineTranslationStartStep.value=String(p.translationStep);refineRotationStartStep.value=String(p.rotationStep);landmarkReflection.refresh();updateSplineControls();renderAll()}
 window.addEventListener('align-preferences-storage-error',(event)=>setStatus('Saved settings could not be loaded; using defaults. '+(event as CustomEvent).detail,true))
 window.addEventListener('align-preferences-changed',()=>applySettings(getPreferences()))
 window.addEventListener('align-registration-defaults',()=>{if(!activity.busy)applyRegistrationDefaults()})

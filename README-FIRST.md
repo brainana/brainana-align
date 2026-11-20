@@ -1,3 +1,11 @@
+# Brainana Align 0.18.4
+
+**Landmark alignment:** choose any landmark transform model and enable **Allow left–right reflection** when appropriate. The app compares ordinary and mirrored fits using that same model; it does not add scale or shear to a rigid fit. The default is unchanged. Four or more spatially distributed pairs are needed to distinguish handedness from a rigid rotation; planar/tied cases retain the non-reflected fit and show a warning. The checkbox also controls affine fitting. A reflected affine optimum is rejected while it is off; when on, confirmation is still required.
+
+**Manual adjustment:** select **Adjust MRI** or **Adjust CT**, then **Flip … left–right**. Confirm the change; click the same control again to undo it. The flip is separate from scale and from export direction, and original image values remain unchanged. It works with linear alignments. Pending proposals must first be accepted or rejected. Nonlinear maps cannot be flipped here; their disable reason explains that a linear alignment is required.
+
+The status/fit diagnostics identify mirrored results. Application, restore and export retain explicit reflection confirmation. Sessions save the selected fitting option and manual flags; exported images and transform metadata record reflection. These are true anatomical reflections, distinct from switching the displayed fixed/moving image.
+
 Save by filename and folder · 0.18.3
 
 Open saved session from the home screen or toolbar now reopens the original images and restores the saved working resolution, processing and alignment. If a file has moved, select its current location when prompted. New sessions save original local file paths; older sessions also look beside the JSON file. Original image files are not embedded in the session. Browser runtimes ask for source-file selection.

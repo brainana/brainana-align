@@ -1,3 +1,4 @@
+import {diagnoseTransform} from './landmarkFit'
 import type {FitState} from './appTypes'
 import {LANDMARK_SENSITIVITY_MIN_PAIRS,LANDMARK_SENSITIVITY_MAX_PAIRS,type LandmarkSensitivityInput,type LandmarkSensitivityReport,type SensitivityModel} from '../../../packages/imaging-math/landmarkSensitivity'
 
@@ -20,13 +21,13 @@ export function landmarkSensitivityAvailability(fit:FitState){
 export function landmarkSensitivityInput(fit:FitState):LandmarkSensitivityInput{
  const gate=landmarkSensitivityAvailability(fit)
  if(!gate.available||!gate.model)throw Error(gate.reason)
- return {model:gate.model,smoothing:fit.nonlinear?.kernel==='3d-polyharmonic-r'?fit.nonlinear.smoothing:undefined,pairs:fit.landmarkSnapshot.filter(p=>p.enabled&&p.mri&&p.ct).map(p=>({id:p.id,source:[...(fit.direction==='ct-mri'?p.ct!:p.mri!)] as [number,number,number],target:[...(fit.direction==='ct-mri'?p.mri!:p.ct!)] as [number,number,number]}))}
+ return {model:gate.model,reflection:diagnoseTransform(fit.landmarkMatrix).reflection?'require':'proper',smoothing:fit.nonlinear?.kernel==='3d-polyharmonic-r'?fit.nonlinear.smoothing:undefined,pairs:fit.landmarkSnapshot.filter(p=>p.enabled&&p.mri&&p.ct).map(p=>({id:p.id,source:[...(fit.direction==='ct-mri'?p.ct!:p.mri!)] as [number,number,number],target:[...(fit.direction==='ct-mri'?p.mri!:p.ct!)] as [number,number,number]}))}
 }
 /** Markup is cheap: refitting occurs only after the user requests it. */
 export function landmarkSensitivityHtml(fit:FitState):string{
  const gate=landmarkSensitivityAvailability(fit)
  if(!gate.model)return ''
- return `<details class="landmark-sensitivity"><summary>Landmark refit sensitivity</summary><p>Omit each fitted pair, refit the original landmark model, and compare predictions. This does not measure target accuracy or independently validate the alignment.</p><p>Analysis gates: rigid/similarity 6 pairs; anisotropic/affine 8; spline 20. These are application heuristics; retained fits must remain valid.</p>${gate.available?'<button type="button" data-landmark-sensitivity-start>Calculate leave-one-out sensitivity</button><button type="button" data-landmark-sensitivity-cancel hidden>Cancel sensitivity</button>':`<p>${escapeHtml(gate.reason)}</p>`}<div data-landmark-sensitivity-report role="status" aria-live="polite"></div></details>`
+ return `<details class="landmark-sensitivity"><summary>Landmark refit sensitivity</summary><p>Omit each fitted pair, refit the original landmark model with its original reflection branch, and compare predictions. This does not measure target accuracy or independently validate the alignment.</p><p>Analysis gates: rigid/similarity 6 pairs; anisotropic/affine 8; spline 20. These are application heuristics; retained fits must remain valid.</p>${gate.available?'<button type="button" data-landmark-sensitivity-start>Calculate leave-one-out sensitivity</button><button type="button" data-landmark-sensitivity-cancel hidden>Cancel sensitivity</button>':`<p>${escapeHtml(gate.reason)}</p>`}<div data-landmark-sensitivity-report role="status" aria-live="polite"></div></details>`
 }
 export function landmarkSensitivityReportHtml(report:LandmarkSensitivityReport):string{
  if(report.status==='unavailable')return `<p>${escapeHtml(report.reason??'Sensitivity unavailable.')}</p>`

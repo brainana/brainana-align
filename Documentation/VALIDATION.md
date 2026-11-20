@@ -1,3 +1,11 @@
+# 0.18.4 · LR reflection qualification
+
+Sixteen committed noisy cases use an independent NumPy SVD oracle to check rigid/similarity solutions with and without reflection; tests never regenerate those references from the candidate. Compiled tests verify reflection-disabled rejection for affine and explicit consent when enabled.
+
+New reflection tests recover exact mirrored6/7/9 constrained transforms through small,90-degree,oblique and near-180-degree rotations, verify inverse maps and model scale/shear constraints, preserve proper defaults/ties, and identify planar handedness ambiguity. Leave-one-out checks retain the chosen mirror branch. Session tests cover schema15, old schemas, branch/flag validation, confirmation and export metadata. Manual tests cover both targets and directions, reference-center algebra, immediate preview deltas, repeated flip/undo/reset, unchanged source data and busy/proposal/nonlinear guards.
+
+The actual compiled frontend tests mirrored6/7/9 decisions and parameter counts, including declined confirmation. Native Electron qualification exercises the real manual flip button and original-source export worker, checking every native output voxel against an independently reversed-X array and checking saved reflection flags/consent. Native dialogs/confirmation choices are scripted; software WebGL2 is used, not physical GPU certification. The full report records all suites, package proof and source/runtime preservation.
+
 # 0.18.3 · combined filename/folder save qualification
 
 New tests exercise the actual native IPC handler with trusted/untrusted frames and same/foreign-origin Blob URLs, filename validation/extensions, grouped image/JSON naming, last-folder defaults, overwrite cancellation before writes, interrupted saves, queue recovery and cleanup. Frontend DOM tests cover one native request per group, visible paths/errors, authenticated workstation filename+folder saving, cancellation and browser picker fallback. The actual Electron compiled frontend is exercised using a synthetic physical-image session; it writes a renamed aligned volume and JSON through Chromium in one picker action, verifies every output voxel, writes a named session and cancels a subsequent image save. Picker returned choices are scripted; physical GPU inspection is not claimed.
