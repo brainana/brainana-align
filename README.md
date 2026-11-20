@@ -1,6 +1,6 @@
 # Brainana Align
 
-**Brainana Align** is a free, cross-platform desktop app for aligning brain images
+**Brainana Align** is a cross-platform desktop app for aligning brain images
 using anatomical landmarks, manual adjustment and automated registration. It runs
 on **macOS, Windows and Linux**, with its registration tools included in the app.
 
