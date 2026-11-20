@@ -1,3 +1,9 @@
+# 0.18.3 · combined filename/folder save qualification
+
+New tests exercise the actual native IPC handler with trusted/untrusted frames and same/foreign-origin Blob URLs, filename validation/extensions, grouped image/JSON naming, last-folder defaults, overwrite cancellation before writes, interrupted saves, queue recovery and cleanup. Frontend DOM tests cover one native request per group, visible paths/errors, authenticated workstation filename+folder saving, cancellation and browser picker fallback. The actual Electron compiled frontend is exercised using a synthetic physical-image session; it writes a renamed aligned volume and JSON through Chromium in one picker action, verifies every output voxel, writes a named session and cancels a subsequent image save. Picker returned choices are scripted; physical GPU inspection is not claimed.
+
+The full release report records current suite counts, exact packaged source hashes, native worker qualifications and platform scope. Registration/resampling/processing/viewer algorithms and scientific sources are unchanged from 0.18.2; large native File/worker tests remain required. This update builds Apple Silicon only.
+
 # 0.18.2 · full session restoration qualification
 
 Required regressions cover old sibling-file lookup, saved paths, native missing-file selection and cancellation, schema migration, wrong-image retry, selected frames, exact saved grids, processing replay, immutable originals, failure/retry and authenticated range transport above 4 GiB. Actual compiled frontend tests start from welcome without selecting a pairing or loading images first, save the recovered state and re-export native pixels. The Electron qualification uses the real sandboxed preload and File path extraction, with scripted picker choices and software WebGL2.

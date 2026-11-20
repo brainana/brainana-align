@@ -11,6 +11,7 @@ import * as nifti from 'nifti-reader-js'
 import {gunzipSync} from 'fflate'
 import {createSessionFixture} from './helpers/session-fixture.mjs'
 import {bootServer} from '../packages/core-launcher/launch.mjs'
+import {installExportSaves} from '../packages/core-desktop/exportSaves.mjs'
 import {installSessionFiles} from '../apps/align/desktop/sessionFiles.mjs'
 import {installPreferenceStorage} from '../packages/core-desktop/preferences.mjs'
 import {installDataSourceActions} from '../packages/core-desktop/dataSources.mjs'
@@ -28,7 +29,7 @@ try{
  boot=await bootServer({serverPath:path.join(root,'apps/align/server.mjs'),root:scratch,cache:path.join(scratch,'cache'),version:meta.version,buildId:meta.buildId,fork:(file,args)=>utilityProcess.fork(file,args,{stdio:'pipe'})})
  win=new BrowserWindow({show:false,width:1540,height:980,webPreferences:{preload:path.join(root,'packages/core-desktop/preload.cjs'),sandbox:true,contextIsolation:true,nodeIntegration:false,webSecurity:true}})
  win.webContents.on('console-message',(_event,_level,message)=>{if(/Uncaught|Error invoking remote|preload.*error/i.test(message))errors.push(message)})
- installPreferenceStorage({directory:scratch,window:()=>win});installSessionFiles({window:()=>win,fileAccess:()=>boot.grantFiles});installDataSourceActions({window:()=>win,canConnect:false,connect:async()=>{}});installJipActions({window:()=>win})
+ installPreferenceStorage({directory:scratch,window:()=>win});installExportSaves({directory:scratch,window:()=>win});installSessionFiles({window:()=>win,fileAccess:()=>boot.grantFiles});installDataSourceActions({window:()=>win,canConnect:false,connect:async()=>{}});installJipActions({window:()=>win})
  await win.loadURL(boot.url);win.webContents.debugger.attach('1.3')
  const js=expression=>win.webContents.executeJavaScript(expression)
  async function wait(expression,message){for(let i=0;i<1200;i++){if(await js(expression))return;await new Promise(r=>setTimeout(r,20))}throw Error(message+'; status='+await js('document.querySelector("#status")?.textContent'))}
@@ -47,6 +48,22 @@ try{
  await open();assert.equal(pickers,0,'Old sessions next to images restore from welcome without manual image loading')
  assert(await js('document.querySelector("#welcome-screen").classList.contains("hidden")'))
  assert(await js('document.querySelector("#mri-name").textContent==="anatomy.nii"&&document.querySelector("#ct-name").textContent==="ct.nii"'))
+ // Actual compiled Save buttons use the real sandboxed bridge and Chromium
+ // disk download. Only the native dialog's returned choice is scripted.
+ let saveDialogs=0,saveChoice=path.join(scratch,'renamed native output.nii.gz')
+ dialog.showSaveDialog=async(_win,options)=>{saveDialogs++;assert(options.title.includes('filename and folder'));return saveChoice?{canceled:false,filePath:saveChoice}:{canceled:true}}
+ await js('document.querySelector("#export-open").click();document.querySelector("#save-aligned").click()')
+ await wait('/Aligned image saved/.test(document.querySelector("#status").textContent)','Combined native save must complete')
+ assert.equal(saveDialogs,1,'The volume and metadata use one combined native Save dialog')
+ const directBytes=gunzipSync(await fs.readFile(saveChoice)),directHeader=nifti.readHeader(directBytes.buffer),directValues=new Float32Array(nifti.readImage(directHeader,directBytes.buffer))
+ assert.deepEqual(directValues,values)
+ assert.equal(JSON.parse(await fs.readFile(path.join(scratch,'renamed native output.json'),'utf8')).kind,'transformed-moving-image')
+ const nativeSession=path.join(scratch,'my named session.json');saveChoice=nativeSession
+ await js('document.querySelector("#save-session-export").click()');await wait('/Session saved/.test(document.querySelector("#status").textContent)','Session save must complete')
+ assert.equal(JSON.parse(await fs.readFile(nativeSession,'utf8')).landmarks.length,5)
+ saveChoice='';await js('document.querySelector("#save-aligned").click()');await wait('/Save cancelled/.test(document.querySelector("#status").textContent)','Cancelling native Save must propagate')
+ assert.equal(saveDialogs,3)
+ await js('document.querySelector("#export-close").click()')
  await js('window.__saved=[];window.brainanaAlignSaveBlob=async(blob,filename)=>window.__saved.push({filename,bytes:Array.from(new Uint8Array(await blob.arrayBuffer()))});document.querySelector("#save-session").click()')
  await wait('window.__saved.length===1','Restored session must save');let saved=JSON.parse(Buffer.from((await js('window.__saved[0]')).bytes).toString())
  assert.deepEqual(saved.fit.matrix,matrix);assert.equal(saved.landmarks.length,5);assert.equal(saved.schemaVersion,14);assert.deepEqual(saved.images.mri.sourceLocations,[mri]);assert.deepEqual(saved.images.ct.sourceLocations,[ct]);assert.deepEqual(saved.images.mri.workingDims,[9,10,11]);assert.deepEqual(saved.optimizationWindows,payload.optimizationWindows)
@@ -55,7 +72,7 @@ try{
  const moved=path.join(folder,'renamed CT.nii');await fs.rename(ct,moved);choices=[{canceled:false,filePaths:[moved]}];await reload();await open();assert.equal(pickers,1)
  await js('window.__saved=[];window.brainanaAlignSaveBlob=async(blob,filename)=>window.__saved.push({filename,text:await blob.text()});document.querySelector("#save-session").click()');await wait('window.__saved.length===1','Relinked session must save');saved=JSON.parse(await js('window.__saved[0].text'));assert.deepEqual(saved.images.ct.sourceLocations,[moved]);assert.equal(saved.images.ct.name,'renamed CT.nii');assert.deepEqual(saved.fit.matrix,matrix)
  choices=[{canceled:true,filePaths:[]}];await reload();await choose('#load-session',[session]);await wait('/Session opening cancelled/.test(document.querySelector("#status").textContent)','Cancelling native relinking must finish');assert(await js('!document.querySelector("#welcome-screen").classList.contains("hidden")'));assert(await js('document.querySelectorAll(".landmark-row").length===0'));assert(await js('document.querySelector("#alignment-progress").classList.contains("hidden")'))
- const report={status:'passed',version:meta.version,electron:process.versions.electron,realSandboxedPreload:true,genuineBrowserFilePaths:true,fabricatedFilePathsRejected:true,oldSessionOpenedFromWelcome:true,workingGridAndFiveLandmarksRestored:true,movedImageRelinkedAndResaved:true,cancelPreservesWelcome:true,fullNativeReExportPixelsExact:true,picker:'Native chooser invocation tested; returned selections scripted',rendering:'Actual compiled viewer using software WebGL2; not physical GPU certification'}
+ const report={status:'passed',version:meta.version,electron:process.versions.electron,realSandboxedPreload:true,combinedNativeFilenameFolderSave:true,oneDialogForVolumeAndRenamedMetadata:true,actualChromiumDiskWritesAndExactVoxels:true,nativeSaveCancelAndNamedSession:true,genuineBrowserFilePaths:true,fabricatedFilePathsRejected:true,oldSessionOpenedFromWelcome:true,workingGridAndFiveLandmarksRestored:true,movedImageRelinkedAndResaved:true,cancelPreservesWelcome:true,fullNativeReExportPixelsExact:true,picker:'Native chooser invocation tested; returned selections scripted',rendering:'Actual compiled viewer using software WebGL2; not physical GPU certification'}
  const outputPath=path.join(root,'artifacts/validation/session-desktop.json');await fs.mkdir(path.dirname(outputPath),{recursive:true});assert.deepEqual(errors,[]);await fs.writeFile(outputPath,JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report,null,2))
 }catch(error){console.error(error);console.error(errors);exitStatus=1}
 finally{clearTimeout(watchdog);win?.destroy();await boot?.stop();await fs.rm(scratch,{recursive:true,force:true});app.exit(exitStatus)}

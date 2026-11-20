@@ -47,9 +47,10 @@ const lifeMenu=new vm.SyntheticModule(['applyAppMenu'],function(){this.setExport
 const lifeBoot=new vm.SyntheticModule(['bootServer'],function(){this.setExport('bootServer',async()=>({url:base,child:new EventEmitter(),stop:async()=>stopCount++,number:++bootCount}))},{context:lifeContext})
 const lifeFs=new vm.SyntheticModule(['default'],function(){this.setExport('default',{})},{context:lifeContext})
 const lifePreferences=new vm.SyntheticModule(['installPreferenceStorage'],function(){this.setExport('installPreferenceStorage',()=>{})},{context:lifeContext})
+const lifeExports=new vm.SyntheticModule(['installExportSaves'],function(){this.setExport('installExportSaves',()=>{})},{context:lifeContext})
 const lifeDataSources=new vm.SyntheticModule(['installDataSourceActions'],function(){this.setExport('installDataSourceActions',()=>{})},{context:lifeContext})
 const lifeModule=new vm.SourceTextModule(fs.readFileSync(path.join(root,'packages/core-desktop/main.mjs'),'utf8'),{context:lifeContext})
-await lifeModule.link(spec=>({'electron':lifeElectron,'node:fs/promises':lifeFs,'./preferences.mjs':lifePreferences,'./dataSources.mjs':lifeDataSources,'./window.mjs':lifeWindow,'./menu.mjs':lifeMenu,'@brainana/core-launcher/launch.mjs':lifeBoot})[spec]);await lifeModule.evaluate()
+await lifeModule.link(spec=>({'electron':lifeElectron,'node:fs/promises':lifeFs,'./preferences.mjs':lifePreferences,'./exportSaves.mjs':lifeExports,'./dataSources.mjs':lifeDataSources,'./window.mjs':lifeWindow,'./menu.mjs':lifeMenu,'@brainana/core-launcher/launch.mjs':lifeBoot})[spec]);await lifeModule.evaluate()
 let remoteFails=false
 await lifeModule.namespace.runDesktop({appLabel:'Test',version:'test',buildId:'test',serverPath:'test',connectRemote:async()=>{if(remoteFails)throw new Error('Cancelled connection');return {url:base,stop:async()=>remoteStopped++}}})
 assert.equal(bootCount,1);appEvents.emit('second-instance');assert.ok(windows[0].restored&&windows[0].focused)

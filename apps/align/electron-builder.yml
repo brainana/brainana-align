@@ -32,12 +32,12 @@ mac:
   category: public.app-category.medical
   identity: null
   minimumSystemVersion: '14.0'
-  bundleVersion: '17264'
-  bundleShortVersion: '0.18.2'
+  bundleVersion: '17265'
+  bundleShortVersion: '0.18.3'
   mergeASARs: true
   extendInfo:
-    BrainanaReleaseVersion: 0.18.2
-    BrainanaBuildID: 0.18.2
+    BrainanaReleaseVersion: 0.18.3
+    BrainanaBuildID: 0.18.3
 win:
   extraResources:
     - from: generated/scientific-runtime

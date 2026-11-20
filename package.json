@@ -1,7 +1,7 @@
 {
   "name": "brainana-align",
   "private": true,
-  "version": "0.18.2",
+  "version": "0.18.3",
   "type": "module",
   "description": "Brainana Align standalone registration application",
   "author": "Brainana",
@@ -124,7 +124,8 @@
     "test:session-files": "node --experimental-vm-modules tests/session-file-service-regression.mjs",
     "test:session-workspace": "node --import tsx tests/session-workspace-regression.mts",
     "test:session-browser": "node tests/session-browser-e2e.mjs",
-    "verify:session-desktop": "node tests/run-session-desktop.mjs"
+    "verify:session-desktop": "node tests/run-session-desktop.mjs",
+    "test:save-dialog": "node --experimental-vm-modules tests/export-save-regression.mjs && node --import tsx tests/export-destination-regression.mts"
   },
   "dependencies": {
     "@brainana/core-desktop": "*",

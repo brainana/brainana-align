@@ -1,235 +1,106 @@
-import {
-  chooseLocalExportFolder,
-  createExportDirectory,
-  joinServerPath,
-  listExportDirectories,
-  saveLocalExportBlob,
-  saveRemoteBlob,
-} from './filesystemClient'
-import { isRemoteRuntime, loadRuntimeConfig, type RuntimeConfig } from './runtimeClient'
-
-type ExportState = {
-  remote: boolean
-  configLoaded: boolean
-  destination: 'local' | 'workstation'
-  localPath: string
-  localSelected: boolean
-  remotePath: string
-  remoteSelected: boolean
-  chain: Promise<void>
-  browsePath: string
-}
+import {createExportDirectory, joinServerPath, listExportDirectories, saveRemoteBlob} from './filesystemClient'
+import {isRemoteRuntime, loadRuntimeConfig} from './runtimeClient'
+import {exportFilename, exportFilenames} from '@brainana/core-client/exportNames.mjs'
+import type {ExportArtifact} from './exportArtifacts'
 
 declare global {
   interface Window {
-    brainanaAlignSaveBlob?: (blob: Blob, filename: string) => Promise<void>
+    brainanaAlignSaveBlob?: ((blob: Blob, filename: string) => Promise<void>) & {artifacts?:(artifacts:ExportArtifact[])=>Promise<void>}
+    brainanaExports?: {save:(files:{url:string;filename:string}[])=>Promise<{canceled:boolean;paths?:string[]}>}
+    showSaveFilePicker?: (options:{suggestedName:string})=>Promise<FileSystemFileHandle>
   }
 }
-
-const cleanName = (name: string): string =>
-  String(name || 'brainana-align-output').replace(/[\\/:*?"<>|]/g, '_')
-
-const escapeHtml = (value: string): string => value.replace(
-  /[&<>"']/g,
-  char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]!,
-)
-
-function directDownload(blob: Blob, filename: string): void {
-  const url = URL.createObjectURL(blob)
-  const anchor = document.createElement('a')
-  anchor.href = url
-  anchor.download = filename
-  anchor.click()
-  setTimeout(() => URL.revokeObjectURL(url), 3000)
-}
+const cancelled = () => Error('Save cancelled. No further files were saved.')
 
 export function installExportDestination(): void {
-  const state: ExportState = {
-    remote: false,
-    configLoaded: false,
-    destination: 'local',
-    localPath: '',
-    localSelected: false,
-    remotePath: '',
-    remoteSelected: false,
-    chain: Promise.resolve(),
-    browsePath: '',
-  }
-  let config: RuntimeConfig | null = null
-
+  let remote = false, destination = 'local', browsePath = '', remotePath = '', chain = Promise.resolve(), finish:((error?:Error)=>void)|null = null
   const style = document.createElement('style')
   style.dataset.brainanaModule = 'export-destination'
-  style.textContent = `
-    #ba-export-panel{margin:12px 0;padding:12px;border:1px solid var(--border-2);border-radius:8px;background:var(--panel-2)}#ba-folder-controls{display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap}
-    #ba-folder-path{font-size:12px;color:var(--muted);overflow-wrap:anywhere}#ba-export-status{min-height:18px;margin-top:8px;font-size:12px}
-    .ba-overlay{position:fixed;inset:0;z-index:1000000;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center}.ba-dialog{width:min(680px,90vw);max-height:80vh;background:var(--panel);border:1px solid var(--border-2);border-radius:10px;display:flex;flex-direction:column}
-    .ba-dialog header{padding:14px 16px;font-weight:700;border-bottom:1px solid var(--border-2)}.ba-nav,.ba-actions{padding:10px 14px;display:flex;gap:8px;align-items:center}.ba-list{min-height:220px;overflow:auto;border-top:1px solid var(--border-2);border-bottom:1px solid var(--border-2)}.ba-folder-row{width:100%;text-align:left;border:0;border-bottom:1px solid var(--border-2);border-radius:0;background:transparent;padding:10px 14px;display:flex;gap:10px}.ba-actions{justify-content:flex-end}.ba-empty{padding:16px;color:var(--muted)}.ba-msg{padding:0 14px;min-height:20px;color:var(--danger)}
-  `
-  document.head.appendChild(style)
+  style.textContent = `#ba-export-panel{margin:12px 0;padding:12px;border:1px solid var(--border-2);border-radius:8px;background:var(--panel-2)}#ba-export-status{min-height:18px;margin-top:8px;font-size:12px;overflow-wrap:anywhere}.ba-overlay{position:fixed;inset:0;z-index:1000000;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center}.ba-dialog{width:min(680px,90vw);max-height:85vh;overflow:auto;background:var(--panel);border:1px solid var(--border-2);border-radius:10px;display:flex;flex-direction:column}.ba-dialog header{padding:14px 16px;font-weight:700;border-bottom:1px solid var(--border-2)}.ba-nav,.ba-actions{padding:10px 14px;display:flex;gap:8px;align-items:center}.ba-list{min-height:100px;max-height:30vh;overflow:auto;border-block:1px solid var(--border-2)}.ba-folder-row{width:100%;text-align:left;border:0;border-bottom:1px solid var(--border-2);border-radius:0;background:transparent;padding:10px 14px}.ba-actions{justify-content:flex-end}.ba-empty{padding:16px;color:var(--muted)}.ba-msg{padding:0 14px;min-height:20px;color:var(--danger)}.ba-save-fields{padding:14px}.ba-save-fields input{width:100%}#ba-save-related{overflow-wrap:anywhere}`
+  document.head.append(style)
+  const panel = document.createElement('div'); panel.id = 'ba-export-panel'
+  panel.innerHTML = `<div id="ba-destination-row"><label>Save to <select id="ba-destination"><option value="local">This computer</option><option value="workstation">Workstation</option></select></label></div><p class="hint">Each Save button lets you choose the filename and folder together. Accompanying metadata uses the same name.</p><div id="ba-export-status" role="status" aria-live="polite"></div>`
+  const exportBody = document.querySelector('#export-modal .modal-card'); exportBody?.insertBefore(panel, exportBody.querySelector('h3'))
+  const status = (message:string, error = false) => { const element = panel.querySelector<HTMLElement>('#ba-export-status')!; element.textContent = message; element.style.color = error ? 'var(--danger)' : 'var(--muted)'; window.dispatchEvent(new CustomEvent('align-export-result',{detail:{message,error}})) }
+  panel.querySelector<HTMLSelectElement>('#ba-destination')!.addEventListener('change', e => { destination = (e.target as HTMLSelectElement).value })
+  const configReady = loadRuntimeConfig().then(config => {remote = isRemoteRuntime(config)}).catch(() => {}).then(() => {panel.querySelector<HTMLElement>('#ba-destination-row')!.hidden = !remote})
 
-  const exportBody = document.querySelector('#export-modal .modal-card')
-  const panel = document.createElement('div')
-  panel.id = 'ba-export-panel'
-  panel.innerHTML = `<div id="ba-destination-row"><label>Export destination <select id="ba-destination"><option value="local">This Mac</option><option value="workstation">Workstation</option></select></label></div><div id="ba-folder-controls"><button id="ba-folder-button" type="button">Choose local export folder</button><span id="ba-folder-path">Browser downloads if no folder is selected</span></div><div id="ba-export-status"></div>`
-  exportBody?.insertBefore(panel, exportBody.querySelector('.export-grid'))
-
-  const exportStatus = panel.querySelector<HTMLElement>('#ba-export-status')!
-  const exportSetStatus = (message: string, error = false): void => {
-    exportStatus.textContent = message
-    exportStatus.style.color = error ? 'var(--danger)' : 'var(--muted)'
-    window.dispatchEvent(new CustomEvent('align-export-result',{detail:{message,error}}))
-  }
-
-  const folderOverlay = document.createElement('div')
-  folderOverlay.id = 'ba-folder-modal'
-  folderOverlay.className = 'ba-overlay modal hidden'
-  folderOverlay.innerHTML = `<div class="ba-dialog" role="dialog" aria-modal="true" tabindex="-1"><header>Choose workstation export folder</header><div class="ba-nav"><button id="ba-remote-up">Up</button><button id="ba-remote-new">New folder</button><code id="ba-remote-path">/</code></div><div id="ba-remote-list" class="ba-list"></div><div id="ba-remote-msg" class="ba-msg"></div><div class="ba-actions"><button id="ba-remote-cancel">Cancel</button><button id="ba-remote-select" class="primary">Select this folder</button></div></div>`
-  document.body.appendChild(folderOverlay)
-
-  const renderPanel = (): void => {
-    panel.querySelector<HTMLElement>('#ba-destination-row')!.style.display = state.remote ? 'block' : 'none'
-    if (!state.remote) state.destination = 'local'
-    panel.querySelector<HTMLSelectElement>('#ba-destination')!.value = state.destination
-    const button = panel.querySelector<HTMLButtonElement>('#ba-folder-button')!
-    const path = panel.querySelector<HTMLElement>('#ba-folder-path')!
-    if (state.remote && state.destination === 'workstation') {
-      button.textContent = 'Choose workstation export folder'
-      path.textContent = state.remoteSelected
-        ? (`/${state.remotePath}`.replace(/\/$/, '') || '/')
-        : 'No workstation folder selected'
-    } else {
-      button.textContent = 'Choose local export folder'
-      path.textContent = state.localSelected
-        ? state.localPath
-        : 'Browser downloads if no folder is selected'
-    }
-  }
-
-  async function refreshConfig(): Promise<void> {
-    try {
-      config = await loadRuntimeConfig()
-      state.remote = isRemoteRuntime(config)
-    } catch {
-      config = null
-      state.remote = false
-    }
-    state.configLoaded = true
-    renderPanel()
-  }
-
-  async function saveLocal(blob: Blob, filename: string): Promise<void> {
-    if (!state.localSelected) {
-      directDownload(blob, filename)
-      exportSetStatus(`Downloaded locally: ${filename}`)
-      return
-    }
-    let result = await saveLocalExportBlob(filename, blob, false)
-    if (result.exists) {
-      if (!window.confirm(`${filename} already exists in the selected folder. Replace it?`)) throw new Error('Save cancelled.')
-      result = await saveLocalExportBlob(filename, blob, true)
-    }
-    exportSetStatus(`Saved locally: ${result.path || filename}`)
-  }
-
-  async function saveRemote(blob: Blob, filename: string): Promise<void> {
-    if (!state.remoteSelected) throw new Error('Choose a workstation export folder before exporting.')
-    const relative = joinServerPath(state.remotePath, filename)
-    let result = await saveRemoteBlob(relative, blob, false)
-    if (result.exists) {
-      if (!window.confirm(`/${relative} already exists. Replace it?`)) throw new Error('Save cancelled.')
-      result = await saveRemoteBlob(relative, blob, true)
-    }
-    exportSetStatus(`Saved to workstation: /${result.path || relative}`)
-  }
-
-  window.brainanaAlignSaveBlob = (blob, filename) => {
-    const attempt = state.chain
-      .then(async () => {
-        const safe = cleanName(filename)
-        if (!state.configLoaded) await refreshConfig()
-        exportSetStatus(`Saving ${safe}…`)
-        if (state.remote && state.destination === 'workstation') await saveRemote(blob, safe)
-        else await saveLocal(blob, safe)
-      })
-      .catch(error => {
-        exportSetStatus(error instanceof Error ? error.message : String(error), true)
-        throw error
-      })
-    state.chain=attempt.then(()=>undefined,()=>undefined)
-    return attempt
-  }
-
-  async function listRemote(path = ''): Promise<void> {
+  // Browser/workstation fallback uses one filename + folder dialog. Desktop
+  // saving goes straight to the operating system's Save dialog.
+  const modal = document.createElement('div'); modal.id = 'ba-folder-modal'; modal.className = 'ba-overlay modal hidden'
+  modal.innerHTML = `<form class="ba-dialog" role="dialog" aria-modal="true" aria-labelledby="ba-save-title"><header id="ba-save-title">Save file</header><div id="ba-save-folders"><div class="ba-nav"><button id="ba-remote-up" type="button">Up</button><button id="ba-remote-new" type="button">New folder</button><code id="ba-remote-path">/</code></div><div id="ba-remote-list" class="ba-list"></div></div><div class="ba-save-fields"><label>Filename<input id="ba-save-name" type="text" autocomplete="off" required></label><p id="ba-save-related" class="hint"></p><p id="ba-save-location" class="hint"></p></div><div id="ba-remote-msg" class="ba-msg" role="status"></div><div class="ba-actions"><button id="ba-remote-cancel" type="button">Cancel</button><button id="ba-save-submit" type="submit" class="primary">Save</button></div></form>`
+  document.body.append(modal)
+  const name = modal.querySelector<HTMLInputElement>('#ba-save-name')!, message = modal.querySelector<HTMLElement>('#ba-remote-msg')!, submit = modal.querySelector<HTMLButtonElement>('#ba-save-submit')!
+  let listing = 0, writing = false
+  const listRemote = async (path = '') => {
+    if (writing) return
+    const request = ++listing; submit.disabled = true
     const data = await listExportDirectories(path)
-    state.browsePath = data.path || ''
-    folderOverlay.querySelector<HTMLElement>('#ba-remote-path')!.textContent =
-      `/${state.browsePath}`.replace(/\/$/, '') || '/'
-    const list = folderOverlay.querySelector<HTMLElement>('#ba-remote-list')!
-    list.innerHTML = ''
-    if (!data.entries.length) list.innerHTML = '<div class="ba-empty">No subfolders</div>'
-    for (const entry of data.entries.filter(item => item.directory)) {
-      const button = document.createElement('button')
-      button.className = 'ba-folder-row'
-      button.innerHTML = `<span>📁</span><span>${escapeHtml(entry.name)}</span>`
-      button.addEventListener('click', () => {
-        void listRemote(entry.path).catch(error => {
-          folderOverlay.querySelector<HTMLElement>('#ba-remote-msg')!.textContent = error.message
-        })
-      })
-      list.appendChild(button)
-    }
-    folderOverlay.querySelector<HTMLButtonElement>('#ba-remote-up')!.disabled = !state.browsePath
+    if (request !== listing || writing || modal.classList.contains('hidden')) return
+    submit.disabled = false; browsePath = data.path || ''; modal.querySelector('#ba-remote-path')!.textContent = '/' + browsePath
+    const list = modal.querySelector('#ba-remote-list')!; list.replaceChildren()
+    for (const entry of data.entries.filter(entry => entry.directory)) { const button = document.createElement('button'); button.type = 'button'; button.className = 'ba-folder-row'; button.textContent = entry.name; button.onclick = () => {void listRemote(entry.path).catch(error => {message.textContent = error.message})}; list.append(button) }
+    if (!list.childNodes.length) {const empty = document.createElement('div'); empty.className = 'ba-empty'; empty.textContent = 'No subfolders'; list.append(empty)}
+    modal.querySelector<HTMLButtonElement>('#ba-remote-up')!.disabled = !browsePath
+  }
+  modal.querySelector('#ba-remote-up')!.addEventListener('click', () => {void listRemote(browsePath.split('/').slice(0,-1).join('/')).catch(error => {message.textContent = error.message})})
+  modal.querySelector('#ba-remote-new')!.addEventListener('click', () => { if (writing) return; const value = window.prompt('New folder name:'); if (value) void (async () => {await createExportDirectory(joinServerPath(browsePath,exportFilename(value))); await listRemote(browsePath)})().catch(error => {message.textContent = error.message}) })
+  const cancel = () => {if (!writing) finish?.(cancelled())}
+  modal.querySelector('#ba-remote-cancel')!.addEventListener('click', cancel)
+  modal.addEventListener('keydown', e => {if (e.key === 'Escape') {e.preventDefault(); e.stopPropagation(); cancel()}})
+
+  async function saveDialog(files:ExportArtifact[], workstation:boolean):Promise<{names:string[];download:boolean}> {
+    let savedNames:string[] = [], download = false
+    await new Promise<void>((resolve,reject) => {
+      const previous = document.activeElement as HTMLElement|null
+      finish = error => {writing = false; listing++; modal.classList.add('hidden'); finish = null; modal.querySelector('form')!.onsubmit = null; name.oninput = null; previous?.focus(); error ? reject(error) : resolve()}
+      writing = false; browsePath = remotePath; modal.querySelectorAll<HTMLButtonElement>('button').forEach(button=>{button.disabled=false}); name.disabled=false; submit.disabled = false; name.value = files[0].filename; message.textContent = ''
+      modal.querySelector<HTMLElement>('#ba-save-folders')!.hidden = !workstation
+      modal.querySelector('#ba-save-title')!.textContent = workstation ? 'Save to workstation — filename and folder' : 'Save file'
+      modal.querySelector('#ba-save-location')!.textContent = workstation ? 'Browse to the destination folder, enter the filename, then select Save.' : window.showSaveFilePicker ? 'Save opens your browser’s filename and folder picker.' : 'Your browser controls the destination folder for downloads.'
+      const related = () => {try {const names=exportFilenames(files.map(f=>f.filename),name.value);modal.querySelector('#ba-save-related')!.textContent = files.length > 1 ? 'Also saves: ' + names.slice(1).join(', ') : ''; name.setCustomValidity('')} catch (error) {name.setCustomValidity((error as Error).message)}}
+      name.oninput = related; related()
+      modal.querySelector('form')!.onsubmit = e => {
+        e.preventDefault(); if (writing || submit.disabled) return
+        void (async () => {
+          try {
+            savedNames = exportFilenames(files.map(f=>f.filename),name.value); writing = true; modal.querySelectorAll<HTMLButtonElement>('button').forEach(button=>{button.disabled=true}); name.disabled=true
+            const selectedPath = browsePath
+            if (workstation) {
+              for (let i=0;i<files.length;i++) {const path=joinServerPath(selectedPath,savedNames[i]); let result=await saveRemoteBlob(path,files[i].blob,false); if(result.exists){if(!window.confirm(`${savedNames[i]} already exists. Replace it?`))throw cancelled();result=await saveRemoteBlob(path,files[i].blob,true)}status('Saved to workstation: /'+(result.path||path))}
+              remotePath = selectedPath
+            } else if (window.showSaveFilePicker) {
+              // Called from a visible Save click, preserving browser activation
+              // after a lengthy resampling operation.
+              const handle=await window.showSaveFilePicker({suggestedName:savedNames[0]}), writer=await handle.createWritable(); savedNames[0] = handle.name
+              try {await writer.write(files[0].blob); await writer.close()} catch(error){await writer.abort?.().catch(()=>{});throw error}
+            } else {
+              download = true
+              for(let i=0;i<files.length;i++){const url=URL.createObjectURL(files[i].blob),anchor=document.createElement('a');anchor.href=url;anchor.download=savedNames[i];anchor.click();setTimeout(()=>URL.revokeObjectURL(url),30000)}
+            }
+            finish?.()
+          } catch(error) {finish?.(error instanceof Error ? error : Error(String(error)))}
+        })()
+      }
+      modal.classList.remove('hidden'); name.focus(); name.select()
+      if(workstation)void listRemote(remotePath).catch(error=>{message.textContent=error.message})
+    })
+    return {names:savedNames,download}
   }
 
-  const closeFolder = (): void => { folderOverlay.classList.add('hidden') }
-
-  panel.querySelector<HTMLSelectElement>('#ba-destination')!.addEventListener('change', event => {
-    state.destination = (event.target as HTMLSelectElement).value as 'local' | 'workstation'
-    renderPanel()
-  })
-  panel.querySelector<HTMLButtonElement>('#ba-folder-button')!.addEventListener('click', async () => {
-    try {
-      await refreshConfig()
-      if (state.remote && state.destination === 'workstation') {
-        folderOverlay.classList.remove('hidden')
-        await listRemote(state.remoteSelected ? state.remotePath : '')
-        return
-      }
-      const selected = await chooseLocalExportFolder()
-      if (!selected.selected || !selected.path) return
-      state.localSelected = true
-      state.localPath = selected.path
-      renderPanel()
-      exportSetStatus(`Local export folder selected: ${selected.path}`)
-    } catch (error) {
-      if ((error as DOMException).name !== 'AbortError') {
-        exportSetStatus(error instanceof Error ? error.message : String(error), true)
-      }
-    }
-  })
-  folderOverlay.querySelector('#ba-remote-cancel')!.addEventListener('click', closeFolder)
-  folderOverlay.querySelector('#ba-remote-select')!.addEventListener('click', () => {
-    state.remotePath = state.browsePath
-    state.remoteSelected = true
-    closeFolder()
-    renderPanel()
-  })
-  folderOverlay.querySelector('#ba-remote-up')!.addEventListener('click', () => {
-    const parts = state.browsePath.split('/').filter(Boolean)
-    parts.pop()
-    void listRemote(parts.join('/')).catch(error => exportSetStatus(error.message, true))
-  })
-  folderOverlay.querySelector('#ba-remote-new')!.addEventListener('click', async () => {
-    const name = window.prompt('Name for the new workstation folder:')
-    if (!name) return
-    try {
-      await createExportDirectory(joinServerPath(state.browsePath, cleanName(name)))
-      await listRemote(state.browsePath)
-    } catch (error) {
-      folderOverlay.querySelector<HTMLElement>('#ba-remote-msg')!.textContent =
-        error instanceof Error ? error.message : String(error)
-    }
-  })
-
-  void refreshConfig()
+  async function save(files:ExportArtifact[]) {
+    files.forEach(file=>exportFilename(file.filename)); await configReady
+    if(remote && destination === 'workstation') {const result=await saveDialog(files,true);status('Saved to workstation: /'+joinServerPath(remotePath,result.names[0]));return}
+    if(window.brainanaExports) {
+      status('Choose a filename and folder in the Save dialog…')
+      const items=files.map(file=>({filename:file.filename,url:URL.createObjectURL(file.blob)}))
+      try {const result=await window.brainanaExports.save(items);if(result.canceled)throw cancelled();status('Saved: '+result.paths!.join(', '))} finally {items.forEach(file=>URL.revokeObjectURL(file.url))}
+    } else if(window.showSaveFilePicker) {
+      let names = files.map(file=>file.filename)
+      for (let i=0;i<files.length;i++) {const result=await saveDialog([{...files[i],filename:names[i]}],false);if(i===0)names=exportFilenames(names,result.names[0]);status('Saved: '+result.names[0])}
+    } else {const result=await saveDialog(files,false);status('Download requested: '+result.names.join(', '))}
+  }
+  const queued = (files:ExportArtifact[]) => {const attempt=chain.then(()=>save(files)).catch(error=>{status(error instanceof Error?error.message:String(error),true);throw error});chain=attempt.catch(()=>{});return attempt}
+  window.brainanaAlignSaveBlob = (blob,filename) => queued([{blob,filename}])
+  window.brainanaAlignSaveBlob.artifacts = queued
 }

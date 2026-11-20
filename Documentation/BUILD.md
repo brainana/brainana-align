@@ -1,3 +1,7 @@
+# 0.18.3 · filename/folder save qualification
+
+In addition to the full release gates, run npm run test:save-dialog, npm run test:export-dialog, npm run test:guide-modals and npm run verify:session-desktop. The last command requires native Electron/desktop access and exercises the actual preload, combined native Save invocation, Chromium disk writes, named sessions and exact aligned voxel values. Returned picker choices are scripted. An unavailable desktop is an explicit limitation, never a pass. The release verifier compares the added core-client and core-desktop modules against the signed package.
+
 # 0.18.2 · session restoration checks
 
 Run `npm run build`, `npm run test:session-files`, `npm run test:session-workspace` and `npm run test:session-browser`, then the full CI core/native groups and packaged proofs. The browser test requires Chromium (or `CHROMIUM_PATH`). With a native desktop/display available, run `npm run verify:session-desktop`; `ELECTRON_PATH` can select the architecture-matched Electron executable. This executes the actual sandboxed preload, native path extraction, compiled viewer and workers using software WebGL2. Picker invocations are real, but their returned selections are scripted; this does not certify interactive native-dialog appearance or physical GPU rendering.

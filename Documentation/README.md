@@ -1,10 +1,16 @@
-# Brainana Align 0.18.2
+# Brainana Align 0.18.3
 
 See the [project overview](../README.md), [software credits and scientific references](../docs/software-credits.md),
 and [JIP provenance, repairs and integration changes](../docs/jip-changes.md).
 The following feature guides remain applicable. Historical release notes retain
 their original version labels; current qualification is recorded in each release's
 validation reports and manifests.
+
+## Saving images and sessions
+
+Click **Save aligned image…**, **Save selected generated image…**, **Save transforms and landmarks…**, or **Save reloadable session…**. On desktop, choose the filename and folder together in the native Save dialog. The last-used folder is a starting suggestion; every save still asks. An image’s JSON metadata is saved beside it with the same stem. Renamed transform groups retain their directional suffixes. Existing accompanying files require confirmation. Cancelling stops the remaining files and never reports success.
+
+When saving to a workstation, the Save dialog contains the remote folder browser and filename field together. In a web browser, use its file picker where supported; otherwise enter the filename and the browser’s download settings determine the folder.
 
 # Brainana Align 0.17.10 · image flipping
 
@@ -313,7 +319,7 @@ Open **Brainana Align → Settings…**, press **⌘,** (Ctrl+, outside macOS), 
 - **Interaction:** linked navigation and reverse/sensitivity controls for Shift+scroll slice stepping. Ordinary scroll still zooms. Existing keyboard shortcuts are listed; custom key remapping is not included.
 - **Guide:** dock instructions in a dedicated column so they do not cover anatomy or point controls, open the guide on launch, or remember progress/position. Hiding it retains Resume guide. Docking reduces the space available to image panes; floating mode remains available.
 - **Registration:** choose future model/refinement defaults. These apply on the next launch or through **Apply defaults to visible controls**. Preferences do not change accepted matrices, loaded sessions, pending proposals or a running search. Actual runs use the visible controls and retain their settings in session/export provenance.
-- **Saving:** choose recovery autosave interval (10–300 seconds), remember workflow/panels, inspect recent dataset names, choose the default native export folder, or restore/export/clear recovery. Desktop window dimensions and the most recently used native save folder are remembered. Browser downloads follow browser settings; a server-selected export folder can still be chosen in Export.
+- **Saving:** choose recovery autosave interval (10–300 seconds), remember workflow/panels, inspect recent dataset names, choose the default native export folder, or restore/export/clear recovery. Desktop window dimensions and the most recently used native save folder are remembered. Each Save action opens a filename-and-folder dialog. The desktop uses the native Save dialog; workstation exports combine folder browsing and filename entry. Browser downloads follow browser settings when a native file picker is unavailable.
 
 Recovery contains session state (landmarks, physical image geometry, windows, accepted transform and pending proposals), **not image voxel arrays**. Reload the same MRI and CT before restoring through Settings → Saving; existing geometry/reflection checks still apply. The previous launch snapshot is retained when current-work autosaves begin. Recent entries are names rather than automatic file reopen links. Recovery is not a substitute for saved sessions and source datasets.
 

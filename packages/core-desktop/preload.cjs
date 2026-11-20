@@ -1,4 +1,5 @@
 const {contextBridge,ipcRenderer,webUtils}=require('electron')
+contextBridge.exposeInMainWorld('brainanaExports',{save:files=>ipcRenderer.invoke('brainana-export-save',files)})
 contextBridge.exposeInMainWorld('brainanaPreferences',{memory:()=>ipcRenderer.invoke('align-system-memory'),chooseExportFolder:()=>ipcRenderer.invoke('align-preferences-export-folder'),read:key=>ipcRenderer.invoke('align-preferences-read',key),write:(key,value)=>ipcRenderer.invoke('align-preferences-write',key,value)})
 
 contextBridge.exposeInMainWorld('brainanaDataSources',{status:()=>ipcRenderer.invoke('align-data-source','status'),connect:()=>ipcRenderer.invoke('align-data-source','connect')})

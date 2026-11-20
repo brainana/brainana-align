@@ -1,3 +1,11 @@
+# 0.18.3 · combined filename and folder saving · 2026-11-19
+
+Every desktop Save action now opens one native filename-and-folder dialog. Removed the independent Export folder selector and direct-to-folder behavior. The remembered folder is a suggestion only. Aligned volumes, generated masks/processed images and their JSON metadata are saved as one named group. Transform groups retain directional filenames, using the selected prefix when renamed. Missing output extensions are restored; existing accompanying files require confirmation before any writes. Session and recovery exports use the same path.
+
+Native saves stream existing Chromium Blobs to the selected files without copying volume arrays through IPC. The renderer waits for actual completion; cancellation, interruption or errors stop remaining files and propagate to visible feedback. The workstation Save dialog combines folder browsing and filename entry. Browser file-picker/download fallback limitations remain explicit. Registration, working-image geometry and native resampling numerics are unchanged.
+
+Validation includes native main-frame/origin checks, group renaming, overwrite/cancel/failure/retry, authenticated remote paths, browser picker behavior and a real Electron run of the compiled frontend that writes and independently checks the aligned voxels, renamed metadata and named session. See Validation/REPORT.json for full results and platform scope.
+
 # 0.18.2 · open complete sessions from the home screen · 2026-11-19
 
 Opening a saved session now locates its original images, reconstructs the saved working grids and selected frames, replays masks/crops/voxel edits, and restores the saved landmarks, physical optimization regions and complete registration. New sessions record original local file locations. Older sessions are also searched beside their JSON file. Missing or moved images open a native file browser; renamed originals are accepted after physical geometry validation and their new locations are saved next time. Browser sessions request explicit source-file selection.

@@ -1,3 +1,7 @@
+# 0.18.3 · native filename-and-folder saves
+
+The renderer groups a volume and its JSON metadata using the existing export-artifact boundary. The core-client naming helper maps the selected name onto related outputs; no scientific arrays or image geometry are changed. The core-desktop save handler accepts same-origin Blob URLs and filename suggestions from the trusted main frame, obtains path authorization from one native Save dialog, preflights companion overwrites, and writes sequentially using Chromium download streams. The renderer awaits the terminal result, revokes Blob URLs and stops on cancellation/failure. No image ArrayBuffer crosses IPC. Native paths are never supplied by renderer code. Workstation exports use the existing authenticated save API through a combined folder/filename form.
+
 # 0.18.2 · session image reopening
 
 `sessionWorkspace.ts` stages source validation, exact working grids, frame selection and existing preprocessing workers. The composition root publishes the staged pair and full-map overlay transactionally. `sessionFileAccess.ts` owns source-location metadata and browser fallback prompts. The native desktop locator reads a bounded JSON prefix before large nonlinear fields, resolves saved paths or sibling files and invokes the native picker for missing sources.

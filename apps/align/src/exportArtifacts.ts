@@ -113,5 +113,6 @@ export function saveArtifact(blob: Blob, filename: string): Promise<void> | void
 }
 
 export async function saveArtifacts(artifacts: ExportArtifact[]): Promise<void> {
+  if (window.brainanaAlignSaveBlob?.artifacts) return window.brainanaAlignSaveBlob.artifacts(artifacts)
   for (const artifact of artifacts) await saveArtifact(artifact.blob, artifact.filename)
 }

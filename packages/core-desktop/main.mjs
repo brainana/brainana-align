@@ -2,6 +2,7 @@ import {installDataSourceActions} from './dataSources.mjs'
 import {app,BrowserWindow,dialog,utilityProcess} from 'electron'
 import fs from 'node:fs/promises'
 import {installPreferenceStorage} from './preferences.mjs'
+import {installExportSaves} from './exportSaves.mjs'
 import {createMainWindow} from './window.mjs'
 import {applyAppMenu} from './menu.mjs'
 import {bootServer} from '@brainana/core-launcher/launch.mjs'
@@ -40,6 +41,7 @@ export async function runDesktop(options) {
     await app.whenReady()
     installDataSourceActions({window:()=>win,canConnect:!!connectRemote,connect:()=>switchTo(signal=>connectRemote({window:win,signal}))})
     installPreferenceStorage({directory:app.getPath('userData'),window:()=>win})
+    installExportSaves({directory:app.getPath('userData'),window:()=>win})
     await options.installDomainActions?.({window:()=>win,fileAccess:()=>boot?.grantFiles})
     boot=await local();win=createMainWindow(boot.url,{appLabel})
     watch(boot)

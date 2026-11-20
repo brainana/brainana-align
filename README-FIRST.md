@@ -1,10 +1,16 @@
-Open saved sessions · 0.18.2
+Save by filename and folder · 0.18.3
 
 Open saved session from the home screen or toolbar now reopens the original images and restores the saved working resolution, processing and alignment. If a file has moved, select its current location when prompted. New sessions save original local file paths; older sessions also look beside the JSON file. Original image files are not embedded in the session. Browser runtimes ask for source-file selection.
 
 Native export update · 0.18.1
 
 Native NIfTI export now reads source voxels in encoded chunks or cached pages and resamples tiled output, removing the former 1.5 GiB native input-array cutoff. Native geometry, interpolation and processing rules are preserved. The working-image allocation limit remains separate. See Documentation/CHANGELOG.md and Validation/REPORT.json in the release bundle.
+
+## Saving images and sessions
+
+Click **Save aligned image…**, **Save selected generated image…**, **Save transforms and landmarks…**, or **Save reloadable session…**. On desktop, choose the filename and folder together in the native Save dialog. The last-used folder is a starting suggestion; every save still asks. An image’s JSON metadata is saved beside it with the same stem. Renamed transform groups retain their directional suffixes. Existing accompanying files require confirmation. Cancelling stops the remaining files and never reports success.
+
+When saving to a workstation, the Save dialog contains the remote folder browser and filename field together. In a web browser, use its file picker where supported; otherwise enter the filename and the browser’s download settings determine the folder.
 
 # Brainana Align 0.17.10 · image flipping
 

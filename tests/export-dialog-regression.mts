@@ -21,13 +21,10 @@ let release!:()=>void
 const work=ui.run(()=>new Promise<void>(r=>release=r));assert(d.querySelector<HTMLButtonElement>('#save-aligned')!.disabled);assert(d.querySelector<HTMLButtonElement>('#save-session-export')!.disabled);release();await work;assert(!d.querySelector<HTMLButtonElement>('#save-transform')!.disabled)
 await assert.rejects(ui.run(async()=>{throw new Error('Resampling failed')}),/Resampling failed/);assert.equal(d.querySelector('#export-feedback')!.textContent,'Resampling failed');assert(d.querySelector('#export-feedback')!.classList.contains('error'))
 let fail=true;const attempted:string[]=[]
-Object.assign(globalThis,{fetch:async(url:string,options:any)=>{
- if(url==='/api/config')return new Response(JSON.stringify({mode:'local'}))
- if(url==='/api/local-export-folder/select')return new Response(JSON.stringify({selected:true,path:'/exports'}))
- if(url.startsWith('/api/local-export-file')){assert.equal(options.headers.get('x-brainana-session'),'a'.repeat(64));const name=new URL(url,'http://localhost').searchParams.get('filename')!;attempted.push(name);return new Response(JSON.stringify(fail?{error:'Disk full'}:{path:'/exports/'+name}),{status:fail?500:200})}
- throw new Error(url)
-}})
-installExportDestination();d.querySelector<HTMLButtonElement>('#ba-folder-button')!.click();await new Promise(r=>setTimeout(r,0))
+Object.assign(globalThis,{fetch:async(url:string)=>{assert.equal(url,'/api/config');return new Response(JSON.stringify({mode:'local'}))}})
+window.brainanaExports={save:async files=>{for(const file of files){attempted.push(file.filename);if(fail)throw Error('Disk full')}return {canceled:false,paths:files.map(file=>'/exports/'+file.filename)}}}
+installExportDestination()
+assert.equal(d.querySelector('#ba-folder-button'),null,'No separate folder selection')
 const artifacts=['first.json','second.txt'].map(filename=>({filename,blob:new Blob(['content'])}))
 await assert.rejects(ui.run(()=>saveArtifacts(artifacts)),/Disk full/);assert.deepEqual(attempted,['first.json'],'multi-file export stops after failure');assert.equal(d.querySelector('#export-feedback')!.textContent,'Disk full')
 fail=false;await ui.run(()=>saveArtifacts(artifacts));assert.deepEqual(attempted,['first.json','first.json','second.txt'],'queue recovers for the next export');assert(d.querySelector('#export-feedback')!.textContent!.includes('/exports/second.txt'))
